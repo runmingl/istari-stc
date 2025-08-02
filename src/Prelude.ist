@@ -1,0 +1,1590 @@
+File.import "tpeq_eq.ist";
+
+beginModule "Prelude";
+
+beginModule "Phase";
+define /PHASE i/
+/
+    exists 
+        (* Syntax Phase Prop *)
+        (Syn          : U i )
+        (syn_prop     : (forall (u v : Syn) . u = v : Syn))
+        .
+        unit
+//
+    forall (i : level) . U (1 + i)
+/;
+unfold /PHASE/.
+introOf /i/. reduce //.
+inference.
+introForm /Syn/.
+introForm /SynProp/.
+typecheck.
+qed ();
+
+define /Syn M/
+/
+    M #1
+//
+    forall (M : intersect i . PHASE i) .
+    intersect i . U i
+/;
+unfold /Syn/.
+inference. 
+introOf /M i/. reduce//.
+exploit /M ap i/ /Syn' _/.
+typecheck.
+qed ();
+
+define /is_prop M/
+/
+    M #2 #1
+//
+    forall (M : intersect i . PHASE i) .
+    intersect (i : level) . 
+    forall (u v : Syn M) . u = v : Syn M
+/;
+unfold /is_prop/.
+inference. 
+introOf /M i/. reduce//.
+(* exploit /M ap i/ /Syn synProp ?/. *)
+(* destruct /M/ /Syn synProp ?/. *)
+unfold /Syn at all/.
+reduce //.
+typecheck.
+qed ();
+endModule ();
+
+
+beginModule "Closed";
+
+openModule /Phase/;
+
+define /CLOSED M i A/
+/
+    exists 
+        (Closed_A : U i)
+        (eta   : A -> Closed_A)
+        (star  : Syn M -> Closed_A)
+        (law   : (forall (z : Syn M) (a : A) . star z = eta a : Closed_A))
+        (try   : (forall (C : Closed_A -> U i) (a : Closed_A) 
+                         (bstar : forall (z : Syn M) . C (star z))
+                         (beta  : forall (a : A)     . C (eta a)) 
+                         .
+                         (forall (z : Syn M) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+                         C a
+                         ))
+        (beta1 : (forall (C : Closed_A -> U i)
+                         (bstar : forall (z : Syn M) . C (star z))
+                         (beta  : forall (a : A)     . C (eta a)) 
+                         (a : A) 
+                         .
+                         (forall (z : Syn M) (a : A) . eqtp_eq (bstar z) (beta a)) -g>
+                         try C (eta a) bstar beta = beta a : C (eta a)
+                         ))
+        (beta2 : (forall (C : Closed_A -> U i ) 
+                         (z : Syn M) 
+                         (bstar : forall (z : Syn M) . C (star z))
+                         (beta  : forall (a : A)     . C (eta a))
+                         .
+                        (forall (z : Syn M) (a : A) . eqtp_eq (bstar z) (beta a)) -g>
+                        try C (star z) bstar beta = bstar z : C (star z) 
+                        ))
+        .
+        unit
+//
+    forall (M : intersect i . PHASE i) (i : level) (A : U i) . U (1 + i)
+/;
+unfold /CLOSED/.
+introOf /M i A/. reduce //.
+inference.
+introForm /Closed_A/.
+introForm /closed_eta/.
+introForm /closed_star/.
+introForm /closed_law/.
+introForm /closed_try/. 
+{
+    apply /closed_law/.
+}
+introForm /closed_beta1/. 
+{
+    apply /closed_law/.
+}
+introForm /closed_beta2/. 
+{
+    apply /closed_law/.
+}
+typecheck.
+qed ();
+
+define /t C/
+/
+    C ## 0
+//
+    intersect (M : intersect i . PHASE i)
+              (i : level)
+              (A : U i)
+              .
+    forall (C : CLOSED M i A) . U i
+/;
+unfold /t/.
+inference. 
+introOf /M i A/. reduce//.
+typecheck.
+qed ();
+
+define /eta C/
+/
+    C ## 1
+//
+    intersect (M : intersect i . PHASE i)
+              (i : level)
+              (A : U i)
+              .
+    forall (C : CLOSED M i A) . A -> t C
+/;
+unfold /eta/.
+inference. 
+introOf /M i A/. reduce//.
+unfold /t/.
+typecheck.
+qed ();
+
+define /star C/
+/
+    C ## 2
+//
+    intersect (M : intersect i . PHASE i)
+              (i : level)
+              (A : U i)
+              .
+    forall (C : CLOSED M i A) . Syn M -> t C
+/;
+unfold /star/.
+inference. 
+introOf /M i A/. reduce//.
+unfold /t/.
+typecheck.
+qed ();
+
+define /law {C}/
+/
+    C ## 3
+//
+    intersect (M : intersect i . PHASE i)
+              (i : level)
+              (A : U i)
+              .
+    forall (C : CLOSED M i A) . 
+    forall (z : Syn M) (a : A) . star _ z = eta _ a : t C
+/;
+unfold /law/.
+inference. 
+introOf /M i A/. reduce//.
+unfold /t, star, eta/.
+typecheck.
+qed ();
+
+define /try {Cl}/
+/
+    Cl ## 4
+//
+    intersect (M : intersect i . PHASE i)
+              (i : level)
+              (A : U i)
+              .
+    forall (Cl : CLOSED M i A) . 
+    forall (C : t Cl -> U i)
+           (a : t Cl) 
+           (bstar : forall (z : Syn M) . C (star _ z))
+           (beta  : forall (a : A) . C (eta _ a)) 
+        .
+        (forall (z : Syn M) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+        C a
+/;
+unfold /try/.
+inference. 
+introOf /M i A/. reduce//.
+unfold /t at all, star, eta/.
+typecheck.
+qed ();
+
+define /beta1 {Cl}/
+/
+    Cl ## 5
+//
+    intersect (M : intersect i . PHASE i)
+              (i : level)
+              (A : U i)
+              .
+    forall (Cl : CLOSED M i A) . 
+    forall (C : t Cl -> U i)
+           (bstar : forall (z : Syn M) . C (star _ z))
+           (beta  : forall (a : A) . C (eta _ a)) 
+           (a : A)
+        .
+        (forall (z : Syn M) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+        `try Cl C (eta Cl a) bstar beta = beta a : C (eta Cl a) 
+/;
+unfold /beta1/.
+inference.
+introOf /M i A/. reduce//.
+unfold /t, try, eta at all, star at all/.
+typecheck. 
+qed ();
+
+define /beta2 {Cl}/
+/
+    Cl ## 6
+//
+    intersect (M : intersect i . PHASE i)
+              (i : level)
+              (A : U i)
+              .
+    forall (Cl : CLOSED M i A) . 
+    forall (C : t Cl -> U i)
+           (z : Syn M)
+           (bstar : forall (z : Syn M) . C (star _ z))
+           (beta  : forall (a : A) . C (eta _ a)) 
+        .
+        (forall (z : Syn M) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+        `try Cl C (star Cl z) bstar beta = bstar z : C (star Cl z) 
+/;
+unfold /beta2/.
+inference.
+introOf /M i A/. reduce//.
+unfold /t, try, eta at all, star at all/.
+typecheck. 
+qed ();
+
+define /Open M A/
+/
+    Syn M -> A
+//
+    forall (M : intersect i . PHASE i) .
+    intersect i . forall (A : U i) . U i 
+/;
+unfold /Open/.
+inference.
+introOf /M i A/. 
+typecheck.
+qed ();
+
+define /isClosedModal M A/
+/
+    Open M (exists (x : A) . forall (y : A) . x = y : A)
+//
+    forall (M : intersect i . PHASE i) .
+    intersect i . forall (A : U i) . U i 
+/;
+unfold /isClosedModal/.
+inference.
+introOf /M i A/. 
+typecheck.
+qed ();
+
+lemma "closed_isClosedModal" 
+/ 
+    forall (M : intersect i . PHASE i) .
+    forall i (A : U i) (C : CLOSED M i A) .
+    isClosedModal M (t C)
+/;
+inference.
+intro /M i A C/.
+unfold /isClosedModal, Open/.
+intro /z/.
+exists /star C z/.
+intro /y/.
+so /`try C (fn a . star C z = a : _) y (fn _ . ()) (fn _ .())/ /H/.
+{
+    hyp /H/.
+}
+{
+    rewrite /-> is_prop _ z z1/.
+    reflexivity.
+}
+{
+    apply /law/.
+}
+{
+    reduce //.
+    intro /z' a/.
+    unfold /eqtp_eq/.
+    typecheck.
+    fold /star C/.
+    rewrite /-> is_prop _ z z'/.
+    reflexivity.
+}
+qed ();
+
+lemma "closed_eq"
+/
+    forall (M : intersect i . PHASE i) .
+    forall i (A : U i) (C : CLOSED M i A) (a a' : t C) . 
+    Syn M -> a = a' : t C
+/;
+inference.
+intro /M i A C a a' z/.
+so /closed_isClosedModal M _ A C z/ /Hcl/.
+destruct /Hcl/ /[point Ht]/.
+so /Ht a/ /H1/.
+so /Ht a'/ /H2/.
+rewrite /<- H1, <- H2/.
+reflexivity.
+qed ();
+endModule ();
+
+define /PhaseSig i/
+/
+    exists 
+        (* Syntax Phase Prop *)
+        (Syn          : U i )
+        (syn_prop     : (forall (u v : Syn) . u = v : Syn))
+        (* Open A *)
+        (Closed       : (U i -> U i))
+        (closed_eta   : (forall (A : U i) . A -> Closed A))
+        (closed_star  : (forall (A : U i) . Syn -> Closed A))
+        (closed_law   : (forall (A : U i) (a : A) (z : Syn) .  
+                        closed_star A z = closed_eta A a : Closed A))
+        (closed_try   : (forall 
+                            (A : U i) (C : Closed A -> U i)
+                            (a : Closed A) 
+                            (bstar : forall (z : Syn) . C (closed_star _ z))
+                            (beta  : forall (a : A)   . C (closed_eta _ a)) 
+                            .
+                        (forall (z : Syn) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+                        C a
+                        ))
+        (closed_beta1 : (forall
+                            (A : U i) (C : Closed A -> U i)
+                            (bstar : forall (z : Syn) . C (closed_star _ z))
+                            (beta  : forall (a : A)   . C (closed_eta _ a)) 
+                            (a : A) 
+                            .
+                        (forall (z : Syn) (a : A) . eqtp_eq (bstar z) (beta a)) -g>
+                        closed_try _ C (closed_eta _ a) bstar beta = beta a : C (closed_eta _ a)
+                        ))
+        (closed_beta2 : (forall 
+                            (A : U i) (C : Closed A -> U i ) 
+                            (z : Syn) 
+                            (bstar : forall (z : Syn) . C (closed_star _ z))
+                            (beta  : forall (a : A)   . C (closed_eta _ a))
+                            .
+                        (forall (z : Syn) (a : A) . eqtp_eq (bstar z) (beta a)) -g>
+                        closed_try _ C (closed_star _ z) bstar beta = bstar z : C (closed_star _ z) 
+                        ))
+        .
+        unit
+//
+    forall (i : level) . U (1 + i)
+/;
+unfold /PhaseSig/.
+introOf /i/. reduce //.
+inference.
+introForm /Syn/.
+introForm /Syn_prop/.
+introForm /Closed/.
+introForm /closed_eta/.
+introForm /closed_star/.
+introForm /closed_law/.
+introForm /closed_try/. 
+{
+    apply /closed_law/.
+}
+introForm /closed_beta1/. 
+{
+    apply /closed_law/.
+}
+introForm /closed_beta2/. 
+{
+    apply /closed_law/.
+}
+typecheck.
+qed();
+
+define /SynM {M}/
+/
+    M #1
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . U i
+/;
+unfold /SynM/.
+inference. 
+introOf /M i/. reduce//.
+exploit /M ap i/ /Syn _/.
+typecheck.
+qed ();
+
+define /Syn_propM {M}/
+/
+    M #2 #1
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect (i : level) . 
+    forall (u v : `SynM M) . u = v : SynM
+/;
+unfold /Syn_propM/.
+inference. 
+introOf /M i/. reduce//.
+(* exploit /M ap i/ /Syn synProp ?/. *)
+(* destruct /M/ /Syn synProp ?/. *)
+unfold /SynM at all/.
+reduce //.
+typecheck.
+qed ();
+
+define /ClosedM {M}/
+/
+    M #2 #2 #1
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect (i : level) . (U i -> U i)
+/;
+unfold /ClosedM/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /Syn Syn_prop Closed _/. *)
+reduce //.
+typecheck.
+qed ();
+
+define /EtaM {M A}/
+/
+    M #2 #2 #2 #1 A
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . 
+    forall (A : U i) . A -> (`ClosedM M A)
+/;
+unfold /EtaM/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /Syn Syn_prop Closed eta ?/. *)
+unfold /ClosedM/.
+typecheck.
+qed ();
+
+
+define /StarM {M A}/
+/
+    M #2 #2 #2 #2 #1 A
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . 
+    forall (A : U i) . `SynM M -> `ClosedM M A
+/;
+unfold /StarM/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /Syn Syn_prop Closed eta star ?/. *)
+unfold /SynM, ClosedM/.
+reduce /concl/.
+typecheck.
+qed ();
+
+define /CloLawM {M A}/
+/
+    M #2 #2 #2 #2 #2 #1 A
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . 
+    forall (A : U i) (a : A) (z : `SynM M) . StarM z = EtaM a : ClosedM A
+/;
+unfold /CloLawM/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /Syn Syn_prop Closed eta star law ?/. *)
+unfold /SynM, EtaM, StarM, ClosedM/.
+reduce /concl/.
+typecheck.
+qed ();
+
+define /TryM {M A C}/
+/
+    M #2 #2 #2 #2 #2 #2 #1 A C
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedM M A -> U i)
+           (a : `ClosedM M A) 
+           (bstar : forall (z : SynM) . C (StarM z))
+           (beta  : forall (a : A) . C (EtaM a)) 
+        .
+        (forall (z : SynM) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+        C a
+/;
+unfold /TryM/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /Syn Syn_prop Closed eta star law try ?/. *)
+unfold /SynM at all, EtaM at all, StarM at all, ClosedM at all/.
+reduce //.
+typecheck.
+qed ();
+
+define /TryM_beta1 {M A C}/
+/
+    M #2 #2 #2 #2 #2 #2 #2 #1 A C
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedM M A -> U i)
+           (bstar : forall (z : SynM) . C (StarM z))
+           (beta  : forall (a : A) . C (EtaM a)) 
+           (a : A)
+        .
+        (forall (z : SynM) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+        `TryM M _ C (`EtaM M _ a) bstar beta = beta a : C (`EtaM M _ a) 
+/;
+unfold /TryM_beta1/.
+inference.
+introOf /M i/. reduce//.
+unfold /SynM at all, EtaM at all, StarM at all, ClosedM at all, TryM at all/.
+typecheck. 
+qed ();
+
+define /TryM_beta2 {M A C}/
+/
+    M #2 #2 #2 #2 #2 #2 #2 #2 #1 A C
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedM M A -> U i)
+           (z : `SynM M)
+           (bstar : forall (z : SynM) . C (StarM z))
+           (beta  : forall (a : A) . C (EtaM a))
+        .
+        (forall (z : SynM) (a : A) . eqtp_eq (bstar z) (beta a)) -g>
+        `TryM M _ C (`StarM M _ z) bstar beta = bstar z : C (`StarM M _ z)
+/;
+unfold /TryM_beta2/.
+inference.
+introOf /M i/. reduce//.
+unfold /SynM at all, EtaM at all, StarM at all, ClosedM at all, TryM at all/.
+typecheck.
+qed ();
+
+
+define /OpenM {M} A/
+/
+    (`SynM M) -> A
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . forall (A : U i) . U i 
+/;
+unfold /OpenM/.
+inference.
+introOf /M i A/. 
+typecheck.
+qed ();
+
+define /isClosedModalM M A/
+/
+    (`OpenM M) (exists (x : A) . forall (y : A) . x = y : A)
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . forall (A : U i) . U i 
+/;
+unfold /isClosedModalM/.
+inference.
+introOf /M i A/. 
+typecheck.
+qed ();
+
+lemma "closed_isClosedModal" 
+/ 
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall (A : U i) . isClosedModalM M (`ClosedM M A)
+/;
+inference.
+intro /M i A/.
+unfold /isClosedModalM, OpenM/.
+intro /z/.
+exists /StarM z/.
+intro /y/.
+so /`TryM _ _ (fn a . StarM z = a : _) y (fn _ . ()) (fn _ .())/ /H/.
+{
+    hyp /H/.
+}
+{
+    rewrite /-> Syn_propM z z1/.
+    reflexivity.
+}
+{
+    apply /CloLawM/.
+}
+{
+    reduce //.
+    intro /z' a/.
+    unfold /eqtp_eq/.
+    typecheck.
+    rewrite /-> Syn_propM z z'/.
+    reflexivity.
+}
+qed ();
+
+lemma "closed_eq"
+/
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . 
+    forall (A : U i) (a a' : `ClosedM M A). 
+    `SynM M -> a = a' : ClosedM A
+/;
+inference.
+intro /M i A a a' z/.
+so /closed_isClosedModal M A z/ /Hcl/.
+destruct /Hcl/ /[point Ht]/.
+so /Ht a/ /H1/.
+so /Ht a'/ /H2/.
+rewrite /<- H1, <- H2/.
+reflexivity.
+qed ();
+
+beginModule "Ext";
+
+(* We first the "Official" extension type *)
+define /Ext' {M} A a/
+/
+    { x : A | forall (z : `SynM M) . x = a z : A }
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . 
+    forall (A : U i) (a : `SynM M -> A) .
+    U i
+/;
+unfold /Ext'/.
+inference.
+typecheck.
+qed ();
+
+(* We then define a convenience version where it allows the open element 
+ * to take a nominally different type, but assert they coincide under Syn. 
+ * We could further allow opA to depend on `z`, but right now it doesn't seem to be useful.
+ * 
+ *)
+
+(* An heterogenious extension type *)
+define /ExtHt {M} opA A a/
+/
+    { x : A | forall (z : `SynM M) . jmeq x (a z) }
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect (i : level) . 
+    forall (opA : `SynM M -> U i) (A : U i)
+           (a : forall (z : `SynM M) . opA z) . U i
+/;
+unfold /ExtHt/.
+inference.
+typecheck.
+qed ();
+
+define /EXT {M i} opA A a/
+/
+    exists 
+        (Ext_A_a  : U i)
+        (HtpSynEq : forall (z : `SynM M) . (A = opA z : U i))
+        (Htdef    : Ext_A_a = ExtHt opA A a : U i)
+        .
+        unit
+//
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) (opA : `SynM M -> U i) (A : U i)
+           (a : forall (z : `SynM M) . opA z) . U (1 + i)
+/;
+unfold /EXT/.
+inference.
+typecheck.
+qed ();
+
+define /t E/
+/
+    E #1
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i 
+            (opA : `SynM M -> U i) (A : U i)
+            (a : forall (z : `SynM M) . opA z) 
+            .
+    forall (E : EXT opA A a) . 
+    U i
+/;
+unfold /t/.
+inference.
+introOf /M i A a E/. reduce //.
+typecheck.
+qed ();
+
+(* If opA and A are equal types under syn, then 
+ * forall (a : Syn -> A) (a' : Syn -> opA), 
+ * then a = a' * as long as (Syn -> a = a')
+ *
+ * This is used to justify the following convenience definition
+ *)
+lemma "coincidence"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall i 
+        (opA : `SynM M -> U i) (A : U i)
+        (a  : `SynM M -> A) 
+        (a' : forall (z : `SynM M) . opA z) .
+        (forall (z : `SynM M) . A = opA z : U i) -> 
+        (forall (z : `SynM M) . a z = a' z : opA z) -> 
+        a = a' : (`SynM M -> A)
+/;
+intro /M i opA A a a' H1/.
+introRaw /H2/.
+{
+    typecheck.
+}
+{
+    introEq /z/ >> auto.
+    eqtp /opA z/.
+    { so /H1 z/ /H/ >> auto.  }
+    apply /H2 z/.
+}
+qed ();
+
+(* Note, with out `Syn -> opA = A`, 
+ * ExtHt and Ext are *NOT EQUAL*, only equivalent
+ * The reason is that for two subset types to be equal, there prop part 
+ * need to be well-formed independent of eqach other. Equivalence, however, allows one 
+ * to establish the wellformedness of one with an assumption of the other.
+ *
+ * In particular, if (A = A' : type) then (A : type) and (A' : type). 
+ * however, if (A <:> A'), then one cannot conclude either is a type 
+ *)
+lemma "tp_equiv"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall i (opA : `SynM M -> U i) (A : U i) 
+        (a : forall (z : `SynM M) . opA z) . 
+        (forall (z : `SynM M) . A = opA z : U i) -> 
+    Ext' A a = ExtHt opA A a : U i  
+/;
+inference.
+intro /M i A opA a Heq/.
+unfold /Ext', ExtHt/.
+typecheck.
+split.
+{
+    intro /H z/ >> auto.
+    unfold /jmeq/.
+    split >> auto.
+}
+{
+    intro /H z/.
+    exploit /H z/ /H1 H2/.
+    auto.
+}
+qed ();
+
+lemma "EXT_t_Ext'_Eq"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall i 
+        (opA : `SynM M -> U i) (A : U i)
+        (a   : forall (z : `SynM M) . opA z) 
+        (E : EXT opA A a) . 
+    Ext' A a = t E : U i
+/;
+inference.
+intro /M i opA A a E/.
+unfold /t/.
+destruct /E/ /Ext_A_a Hq Hd ()/. reduce //.
+symmetryIn /Hd/.
+etransitivity. 
+1:{ hyp /Hd/. }
+{ apply /tp_equiv/ >> auto. }
+qed ();
+
+(* Define a structure that implements it *)
+define /S {M opA} A a/ 
+/
+    ( 
+        `Ext' M A a , (* Definition  *)
+        (fn z . ()) , (* Syn -> A = opA *)
+        () ,          (* Coincidence with subset type *)
+        ()
+    )
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . 
+    forall (opA : `SynM M -> U i) (A : U i)
+           (a   : forall (z : `SynM M) . opA z) .
+           (forall (z : `SynM M) . A = opA z : U i) -g> 
+           EXT opA A a
+/;
+unfold /S/.
+inference.
+introOf /M i opA A a H/. reduce //.
+unfold /EXT/.
+typecheck.
+apply /tp_equiv/ >> auto.
+qed ();
+
+define /S' {M} A a/ 
+/
+    `S M (fn z . A) A a
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . 
+    forall (A : U i) 
+           (a : `SynM M -> A) .
+           EXT (fn z . A ) A a
+/;
+unfold /S'/.
+inference.
+introOf /M i A a/. reduce //.
+typecheck.
+auto.
+qed ();
+
+lemma "intro"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) 
+           (opA : `SynM M -> U i) (A : U i)
+           (a0 : forall (z : `SynM M) . opA z)  
+           (E : EXT opA A a0) 
+    .
+    forall (a : A) . 
+    (forall (z : `SynM M) . (A = opA z : U i) -> a = a0 z : A) ->
+    (a : t E)
+/;
+inference.
+intro /M i opA A a0 E a H/.
+unfold /t/.
+destruct /E/ /Ext_A_a H1 H2 _/. reduce //.
+eqtp /ExtHt _ _ _/.
+{
+    symmetryIn /H2/.
+    auto.
+}
+unfold /ExtHt/.
+typecheck.
+split.
+intro /z/.
+unfold /jmeq/.
+split.
+{ so /H1 z/ /H'/. auto. }
+apply /H/.
+apply /H1 z/.
+qed ();
+
+Database.setImplicits (parseConstant /intro/) 5;
+
+lemma "introEq"
+/ 
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) 
+           (opA : `SynM M -> U i) (A : U i)
+           (a0 : forall (z : `SynM M) . opA z)  
+           (E : EXT opA A a0) 
+    .
+    forall (a b : A) . 
+    (forall (z : `SynM M) . (A = opA z : U i) -> a = a0 z : A) ->
+    (forall (z : `SynM M) . (A = opA z : U i) -> b = a0 z : A) ->
+    (a = b : A) ->
+    (a = b : t E)
+/;
+inference.
+intro /M i opA A a0 E a b H1 H2 Hab/.
+unfold /t/.
+destruct /E/ /Ext_A_a H1' H2' _/. reduce //.
+eqtp /ExtHt _ _ _/.
+{
+    symmetryIn /H2'/.
+    auto.
+}
+unfold /ExtHt/.
+typecheck.
+RuleTactic.setIntroEq >> auto. 
+intro /z/.
+unfold /jmeq/.
+split.
+{
+    so /H1' z/ /H'/.
+    auto. 
+}
+apply /H1 z/.
+auto. 
+qed ();
+
+
+define /inj E a/
+/
+    a
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i  
+              (opA : `SynM M -> U i) (A : U i)
+              (a0 : forall (z : `SynM M) . opA z)  
+              .
+    forall (E : EXT opA A a0) . 
+    (* Operation signature *)
+    forall (a : A) . 
+    (forall (z : `SynM M) . (A = opA z : U i) -> a = a0 z : A) -g>
+    t E
+/;
+inference.
+introOf /M i opA A a0 E a H/. reduce //.
+unfold /inj/.
+apply /intro/.
+auto.
+qed ();
+
+lemma "subtype"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) 
+           (opA : `SynM M -> U i) (A : U i)
+           (a : forall (z : `SynM M) . opA z)  
+           (E : EXT opA A a) 
+    .
+    t E <: A
+/;
+inference.
+intro /M i opA A a E/.
+unfold /t/.
+destruct /E/ /Ext_A_a H1 H2 ()/. reduce //.
+subst /Ext_A_a/.
+intro /x/.
+destruct /x/ /x H/.
+auto.
+qed ();
+
+Database.setImplicits (parseConstant /subtype/) 5;
+
+(* Weaken *)
+define /wk {E} a/
+/
+    a
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i
+           (opA : `SynM M -> U i) (A : U i)
+           (a0 : forall (z : `SynM M) . opA z)  
+           .
+    forall (E : EXT opA A a0) 
+    . 
+    (* Operation signature *)
+    forall (a : t E) . A
+/;
+inference.
+introOf /M i opA A a0 E a/. 
+unfold /wk/.
+reduce //.
+esubsume.
+{ apply /subtype E/. }
+auto.
+qed ();
+
+(* Weaken to the open type *)
+define /wk' {E} z a/
+/
+    a
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i
+           (opA : `SynM M -> U i) (A : U i)
+           (a0 : forall (z : `SynM M) . opA z)  
+           .
+    forall (E : EXT opA A a0) 
+    . 
+    (* Operation signature *)
+    forall (z : `SynM M) (a : t E) . opA z
+/;
+inference.
+introOf /M i opA A a0 E z a/. 
+unfold /wk'/.
+destruct /E/ /extAa H1 H2 ()/.
+unfold /t in a/.
+eqtp /A/ >> auto.
+subst /extAa/.
+unfold /ExtHt in a/.
+destruct /a/ /a H/.
+auto.
+qed ();
+
+lemma "syn_tyeq"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) 
+           (opA : `SynM M -> U i) (A : U i)
+           (a : forall (z : `SynM M) . opA z)  
+           (E : EXT opA A a)
+    . 
+    forall (z : `SynM M) . A = opA z : U i
+/;
+inference.
+intro /M i opA A a E/.
+destruct /E/ /Ext_A_a H1 H2 ()/. reduce //.
+auto.
+qed ();
+
+Database.setImplicits (parseConstant /syn_tyeq/) 5;
+
+(* Point of contraction *)
+define /pt {M opA A a0} E z/
+/
+    a0 z
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . 
+    forall (opA : `SynM M -> U i) (A : U i)
+           (a0 : forall (z : `SynM M) . opA z)  
+           (E : EXT opA A a0) 
+    . 
+    (* Operation signature *)
+    forall (z : `SynM M) . t E
+/;
+inference.
+introOf /M i opA A a0 E z/. reduce //.
+unfold /pt/.
+apply /intro/.
+{
+    intro /z' H/.
+    compat.
+    { 
+        rewrite /-> H/.
+        compat.
+        apply /Syn_propM/.
+    }
+    apply /Syn_propM/.
+}
+so /syn_tyeq E z/ /H/.
+auto.
+qed ();
+
+
+
+lemma "syn_eq"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) 
+           (opA : `SynM M -> U i) (A : U i)
+           (a : forall (z : `SynM M) . opA z)  
+           (E : EXT opA A a)
+    . 
+    forall (a' : t E) (z : `SynM M) . a' = pt E z : t E 
+/;
+inference.
+intro /M i opA A a E a' z/.
+so /EXT_t_Ext'_Eq M _ _ _ _ E/ /HExt'/.
+eqtp /Ext' A a/ >> auto.
+
+tighten /a'/ /Ext' A a/.
+{ eqtp /t E/ >> auto. }
+
+destruct /E/ /Ext_A_a H1 H2 ()/. reduce //.
+unfold /pt, Ext', Ext' in a'/.
+extensionality.
+{
+    destruct /a'/ /a' Ha'/ >> auto.
+    unhide.
+    auto.
+}
+{ destruct /a'/ /a' Ha'/ >> auto.  }
+qed ();
+
+Database.setImplicits (parseConstant /syn_eq/) 5;
+
+lemma "eqUnderSyn"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level)
+              (opA : `SynM M -> U i) (A : U i)
+              (a0 : forall (z : `SynM M) . opA z)  
+              (E : EXT opA A a0) .
+    forall (a b : t E) . 
+    forall (z : `SynM M) .
+    (a = b : t E)
+/;
+inference.
+intro /M i opA A a0 E a b z/.
+etransitivity.
+{
+    apply /syn_eq _ _ z/ >> auto.
+}
+{
+    symmetry.
+    apply /syn_eq _ _ z/ >> auto.
+}
+qed ();
+
+Database.setImplicits (parseConstant /eqUnderSyn/) 5;
+
+lemma "syn_subtype"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) 
+           (opA : `SynM M -> U i) (A : U i)
+           (a : forall (z : `SynM M) . opA z)  
+           (E : EXT opA A a)
+    . 
+    forall (z : `SynM M) . t E <: opA z
+/;
+inference.
+intro /M i opA A a E z a'/.
+eqtp /A/.
+{ so /syn_tyeq E z/ /Ht/. auto. }
+subsume /t E/ >> auto.
+{ apply /subtype E/.}
+qed ();
+
+Database.setImplicits (parseConstant /syn_subtype/) 5;
+
+lemma "syn_eq_open"
+/
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) 
+           (opA : `SynM M -> U i) (A : U i)
+           (a : forall (z : `SynM M) . opA z)  
+           (E : EXT opA A a)
+    . 
+    forall (a' : t E) (z : `SynM M) . a' = pt E z : opA z
+/;
+inference.
+intro /M i opA A a E a' z/.
+subsume /t E/ >> inference.
+{ so /syn_subtype E z/ /H/. auto. }
+apply /syn_eq/.
+qed ();
+
+Database.setImplicits (parseConstant /syn_eq_open/) 5;
+
+lemma "isClosedModal"
+/ 
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) 
+           (opA : `SynM M -> U i) (A : U i)
+           (a : forall (z : `SynM M) . opA z)  
+           (E : EXT opA A a)
+    .
+    isClosedModalM M (t E)
+/;
+inference.
+unfold /isClosedModalM, OpenM/.
+intro /M i opA A a E z/.
+exists /pt E z/. 
+intro /y/.
+symmetry.
+apply /syn_eq/.
+qed ();
+
+endModule ();
+
+beginModule "Glue";
+
+define /GLUE {M i} A B/
+/
+    exists
+        (glueTy_A_B : U i)
+        (glue       : forall (a : forall (z : SynM) . A z) (b : B a) . glueTy_A_B)
+        (pi_open    : glueTy_A_B -> (forall (z : SynM) . A z))
+        (pi_closed  : forall (e : glueTy_A_B) . B (pi_open e))
+        (beta1 : (
+            forall (a : (forall (z : SynM) . A z)) (b : B a) . 
+                (pi_open (glue a b)) = a : (forall (z : SynM) . A z)
+        ))
+        (beta2 : (
+            forall (a : (forall (z : SynM) . A z)) (b : B a) . 
+            (pi_closed (glue a b) = b : B a)
+        ))
+        (eta : (
+            forall (e : glueTy_A_B) . 
+            glue (pi_open e) (pi_closed e) = e : glueTy_A_B
+        ))
+        (syn_eqty : (
+            forall (z : SynM) . glueTy_A_B = A z : U i
+        ))
+        (syn_eq : (
+            forall (z : SynM) (e : glueTy_A_B) .
+            pi_open e z = e : A z 
+        ))
+    .
+    unit
+//
+    forall (M : intersect i . PhaseSig i) .
+    forall (i : level) 
+           (A : `SynM M -> U i)
+           (B : (forall (z : SynM) . A z) -> U i) 
+           .
+    (* (forall x . `isClosedModalM M (B x)) -g> U (1 + i) *)
+    U (1 + i)
+/;
+unfold /GLUE/.
+inference.
+introOf /M i A B/. reduce //.
+(* introOf /M i A B H/. reduce //. *)
+introForm /glueTy_A_B/.
+introForm /glue/.
+introForm /pi_open/.
+introForm /pi_closed/.
+introForm /beta1/.
+introForm /beta2/.
+{ apply /beta1 a b/. }
+introForm /eta/.
+introForm /syn_eqty/.
+introForm /syn_eq/.
+typecheck.
+qed ();
+
+
+
+(* The following functions projects out instances of the Glue family *)
+define /t G/
+/
+    G #1
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) .
+    forall 
+        (G : `GLUE M i A B)
+        .
+    (* Member Type *)
+    U i 
+/;
+unfold /t/.
+inference.
+introOf /M i A B G/. reduce//.
+typecheck.
+qed ();
+
+define /glue G/
+/
+    G #2 #1 
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i  
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    forall
+        (G : `GLUE M i A B)
+        .
+    (* Member Type *)
+    (forall
+            (a : forall (z : SynM) . A z)
+            (b : B a) 
+            .
+        t G 
+    )  
+/;
+unfold /glue/.
+inference.
+introOf /M i A B G/. reduce//.
+unfold /t/.
+typecheck.
+qed ();
+
+define /pi_open {G}/
+/
+    G #2 #2 #1
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    forall 
+        (G : `GLUE M i A B)
+        .
+    (* Member Type *)
+    t G -> (forall (z : SynM) . A z)
+
+/;
+unfold /pi_open/.
+inference. 
+introOf /M i A B G/. reduce//.
+unfold /t/.
+typecheck.
+qed ();
+
+define /pi_closed {G}/
+/
+    G #2 #2 #2 #1
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    forall 
+        (G : `GLUE M i A B)
+        .
+    (* Member Type *)
+    forall (e : t G) . B (pi_open e) 
+/;
+unfold /pi_closed/.
+inference. 
+introOf /M i A B G /. reduce//.
+unfold /t, pi_open/.
+typecheck.
+qed ();
+
+define /beta1 {G}/
+/
+    G #2 #2 #2 #2 #1
+//
+    intersect 
+        (M : intersect i . PhaseSig i) 
+        i 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i)  
+        .
+    forall (G : `GLUE M i A B) .
+    (* Member Type *)
+    forall (a : (forall (z : SynM) . A z)) (b : B a) . 
+    (pi_open (glue G a b)) = a : (forall (z : SynM) . A z)
+/;
+unfold /beta1/.
+inference. 
+introOf /M i A B G/. reduce //.
+unfold /pi_open, glue/.
+typecheck.
+qed ();
+
+define /beta2 {G}/
+/
+    G #2 #2 #2 #2 #2 #1 
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    forall (G : `GLUE M i A B)
+        .
+    (* Member Type *)
+    forall (a : (forall (z : SynM) . A z)) (b : B a) . 
+    (pi_closed (glue G a b) = b : B a)
+/;
+unfold /beta2/.
+inference. 
+introOf /M i A B G/. reduce //.
+unfold /pi_closed, glue/.
+typecheck.
+qed ();
+
+define /eta G/
+/
+    G #2 #2 #2 #2 #2 #2 #1
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    forall (G : `GLUE M i A B) .
+    (* Member Type *)
+    forall (e : t G) . 
+    glue G (pi_open e) (pi_closed e) = e : t G
+/;
+unfold /eta/.
+inference. 
+introOf /M i A B G/. reduce //.
+unfold /pi_open, pi_closed, glue, t at all/.
+typecheck.
+qed ();
+
+define /syn_eqty G/
+/
+    G #2 #2 #2 #2 #2 #2 #2 #1
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    forall (G : `GLUE M i A B) .
+    (* Member Type *)
+    forall (z : SynM) . t G = A z : U i
+/;
+unfold /syn_eqty/.
+inference. 
+introOf /M i A B G/. reduce //.
+unfold /t/.
+typecheck.
+qed ();
+
+(* Transport to open type under Syn *)
+define /open {G} z a/
+/
+    a
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    forall (G : `GLUE M i A B) .
+    (* Member Type *)
+    forall (z : SynM) (a : t G) . A z
+/;
+unfold /open/.
+inference. 
+introOf /M i A B G z a/. reduce //.
+eqtp /t G/ >> auto.
+so /syn_eqty G z/ /H/.
+auto.
+qed ();
+
+define /syn_eq G/
+/
+    G #2 #2 #2 #2 #2 #2 #2 #2 #1
+//
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    forall (G : `GLUE M i A B) .
+    (* Member Type *)
+    forall (z : SynM) (e : t G) .
+    pi_open e z = e : A z 
+/;
+unfold /syn_eq/.
+inference. 
+introOf /M i A B G/. reduce //.
+unfold /t, pi_open/.
+typecheck.
+qed ();
+
+(* This one operates at the right type *)
+lemma "syn_eq'"
+/
+    intersect (M : intersect i . PhaseSig i) .
+    intersect i 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    forall (G : `GLUE M i A B) .
+    (* Member Type *)
+    forall (z : SynM) (e : t G) .
+    pi_open e z = open z e : A z 
+/;
+inference.
+intro /M i A B G z e/.
+transitivity /e/.
+{ 
+    so /syn_eq G z e/ /Heq/ >> auto. 
+    (* why the following doesn' work? *)
+    (* apply /syn_eq' G z e/.  *)
+}
+fold /open z e at 0/.
+reflexivity >> auto.
+qed ();
+
+lemma "eq_closed"
+/
+    forall (M : intersect i . PhaseSig i) .
+    intersect i . 
+    forall 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        (G : `GLUE M i A B) .
+    forall
+        (z : SynM) (e e' : t G) .
+        pi_open e z = pi_open e' z : A z ->
+        e = e' : t G
+/;
+inference.
+intro /M i A B G z e e' Heq/ >> auto. 
+rewrite /-> syn_eq' in Heq at all/ >> auto.
+eqtp /A z/. 
+{ so /syn_eqty G z/ /H/. auto. }
+unfold /open in Heq at all/.
+auto.
+qed ();
+
+lemma "eq_syn"
+/
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i)
+        (G : `GLUE M i A B) .
+    forall
+        (z : `SynM M) (a : (forall (z : SynM) . A z)) (b : B a) . 
+        glue G a b = a z : A z
+/;
+inference.
+intro /M i A B G z a b/.
+rewrite /<- syn_eq _ z (glue G a b)/ >> auto.
+rewrite /-> beta1/ >> auto.
+qed ();
+
+Database.setImplicits (parseConstant /eq_syn/) 3;
+
+(* This is the type a library that works only for ClosedModal B would have.
+   In the remainder of the development, this will be the type of the "Glue" library that 
+   we assume, because this is the one that we know how to faithfully implement.
+   However, and critically, once a Glue tyep is defined, then its associated operations 
+   does not care how the glue type came about.
+*)
+define /GLUE_CM M i/
+/
+    forall 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) .
+        (forall x . `isClosedModalM M (B x)) -g> 
+        `GLUE M i A B
+//
+    forall (M : intersect i . PhaseSig i) (i : level) . U (2 + i)
+/;
+unfold /GLUE_CM/.
+inference.
+introOf /M i/. reduce //.
+typecheck.
+qed ();
+
+(* Convenience lemma for working with structures of GLUE_CM
+ * First 
+ *)
+lemma "glueCM_tp" 
+/
+    forall (M : intersect i . PhaseSig i) 
+           (G : intersect i . GLUE_CM M i) .
+    intersect i . 
+    forall 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    (forall x . `isClosedModalM M (B x)) -g> 
+    G A B : `GLUE M i A B
+/;
+inference.
+intro /M G i A B H/. 
+typecheck.
+hyp /H/.
+qed ();
+
+define /glueCM {M} G A B/
+/
+    glue (G A B)
+//
+    forall (M : intersect i . PhaseSig i) 
+           (G : intersect i . GLUE_CM M i) .
+    intersect i . 
+    forall 
+        (A : `SynM M -> U i)
+        (B : (forall (z : SynM) . A z) -> U i) 
+        .
+    (forall x . `isClosedModalM M (B x)) -g> 
+    (* Member Type *)
+    (forall (a : forall (z : SynM) . A z) . B a -> t (G A B))  
+/;
+unfold /glueCM/.
+inference.
+introOf /M G i A B H/. reduce //.
+typecheck. (* Automatically applied CloseModal condition *)
+qed ();
+endModule (); 
+
+endModule ();

@@ -1,0 +1,121 @@
+File.import "../../Prelude.ist";
+File.import "../../tacticlib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /DTTSyn/;
+
+beginModule "False";
+
+File.import "Tp.ist";
+File.import "Tm.ist";
+File.import "Bool.ist";
+
+openModule /Tp/;
+openModule /Tm/;
+openModule /Bool/;
+
+define /FF_Sem {M L i}/
+/ 
+    `EtaM M _ (inr ())
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    BOOL_Sem L (fn (z : `SynM M) . `ff (L z))
+/;
+unfold /FF_Sem, BOOL_Sem/.
+inference.
+introOf /M L i/.  reduce //.
+typecheck.
+unfold /BOOL_PreSem/.
+typecheck.
+qed ();
+
+define /FF_Ext {M} G L i/
+/
+    Ext.S ((Ext.wk (TM G L i)) (Ext.wk (BOOL G L i))) (fn z . `ff (L z))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    `Ext.EXT M (lsucc i) (fn z . tm (`boolean (L z))) _ _
+/;
+unfold /FF_Ext/.
+inference.
+introOf /M G L i/. reduce //.
+
+infer /TP G L i/ /HtTP/.
+infer /BOOL G L i/ /HtBOOL/.
+infer /TM G L i/ /HtTM/.
+
+typecheck.
+intro /z/. reduce //.
+
+rewrite /-> Ext.syn_eq _ (BOOL _ _ _) z/.
+rewrite /-> Ext.syn_eq _ (TM _ _ _) z/.
+unfold /Ext.pt at all, Ext.wk at all/.
+reflexivity.
+qed ();
+
+define /FF {M} G L i/
+/
+    Glue.glue (G (fn z .  `tm (L z) (`boolean (L z))) (BOOL_Sem L))
+        (fn z . `ff (L z))
+        (`FF_Sem M L i)
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . (Ext.t (FF_Ext G L i))
+/;
+unfold /FF/.
+inference.
+introOf /M G L i/. reduce //.
+
+so /Glue.glueCM_tp M G (fn z . `tp (L z)) (TP_Sem L i)/ /HtGlty/.
+1:{ apply /TP_Sem_isClosedModal/. }
+
+so /Glue.glueCM_tp M G ap i (fn z . `tm (L z) (`boolean (L z))) (BOOL_Sem L)/ /HtAnsGlty/.
+1:{ apply /BOOL_Sem_isClosedModal/. }
+
+so /BOOL_Ext G L i/ /HtAnsExt/.
+so /FF_Ext G L i/ /HtFFExt/.
+
+infer /TP G L i/ /HtTP/.
+
+apply /Ext.intro/.
+{
+    reduce //.
+    intro /z H/.
+    so /Glue.eq_syn (G (fn z . tm (`boolean (L z))) (BOOL_Sem L)) z/ /H'/.
+    rewrite /-> H'/.
+    reduce //.
+    reflexivity.
+}
+{
+    unfold /TM, BOOL, Ext.wk at all/.
+    rewriteRaw /-> Glue.beta2/.
+    typecheck_goal 5;
+    {
+        typecheck.
+        unfold /TP_Sem/.
+        transitivity /U i/ >> auto.
+        apply /Ext.subtype/. 
+    }
+    5:{
+        unfold /TP_Sem/.
+        apply /Ext.intro/.
+        intro /z _/. reduce //.
+        rewrite /-> Glue.syn_eqty _ z/.
+        reflexivity.
+    }
+    typechecker ();
+}
+qed ();
+
+endModule ();

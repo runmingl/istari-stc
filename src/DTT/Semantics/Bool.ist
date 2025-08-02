@@ -1,0 +1,151 @@
+File.import "../../Prelude.ist";
+File.import "../../tacticlib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /DTTSyn/;
+
+beginModule "Bool";
+
+File.import "Tp.ist";
+
+openModule /Tp/;
+
+define /BOOL_PreSem {M} L e/
+/
+    (e = (fn (z : `SynM M) . `tt (L z)) : _) % (e = (fn (z : `SynM M) . `ff (L z)) : _)
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (L : `SynM M -> intersect i . Sig i) .
+    intersect i .
+    forall (e : forall (z : SynM). `tm (L z) (`boolean (L z))) . U i
+/;
+unfold /BOOL_PreSem/.
+inference.
+typecheck.
+qed ();
+
+define /BOOL_Sem {M} L e/
+/
+    `ClosedM M (BOOL_PreSem L e)
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (L : `SynM M -> intersect i . Sig i) .
+    intersect i .
+    forall (e : forall (z : SynM). `tm (L z) (`boolean (L z))) . U i
+/;
+unfold /BOOL_Sem/.
+inference.
+typecheck.
+qed ();
+
+lemma "BOOL_Sem_isClosedModal"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (L : `SynM M -> intersect i . Sig i) .
+    forall e . isClosedModalM M (BOOL_Sem L e)
+/;
+inference.
+intro /M L e/.
+unfold /BOOL_Sem/.
+apply /closed_isClosedModal/. 
+qed ();
+
+define /BOOL_Ext {M} G L i/
+/
+    Ext.S (Ext.wk (TP G L i)) (fn z . `boolean (L z))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    `Ext.EXT M (lsucc i) (fn z . tp (L z)) _ _
+/;
+unfold /BOOL_Ext/.
+inference.
+introOf /M G L i/. reduce //.
+typecheck1 >> auto.
+intro /z/. reduce //.
+infer /TP G L i/ /HtTP/.
+rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+unfold /Ext.pt, Ext.wk/.
+reflexivity.
+qed ();
+
+define /BOOL {M} G L i/
+/
+   Glue.glue (G (fn z . `tp (L z)) (TP_Sem L i))
+      (fn z . `boolean (L z))
+      (Glue.t (G (fn z . `tm (L z) (`boolean (L z))) (BOOL_Sem L)))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . Ext.t (BOOL_Ext G L i)
+/;
+unfold /BOOL/.
+inference.
+introOf /M G L i/.
+reduce //.
+
+so /Glue.glueCM_tp M G (fn z . `tp (L z)) (TP_Sem L i)/ /HtGlty/.
+1:{ apply /TP_Sem_isClosedModal/. }
+
+so /Glue.glueCM_tp M G ap i (fn z . `tm (L z) (`boolean (L z))) (BOOL_Sem L)/ /HtBoolGlty/.
+1:{ apply /BOOL_Sem_isClosedModal/. }
+
+assert /BOOL M G L i : TP G L i/ /HBoolGlueTy/.
+{
+    inference.
+    unfold /BOOL, TP/.
+    typecheck1.
+    typecheck_goal 4;
+    5:{
+        unfold /TP_Sem/.
+        apply /Ext.intro/.
+        intro /z _/. reduce //.
+        rewrite /-> Glue.syn_eqty _ z/.
+        reduce //.
+        reflexivity.
+    }
+    typechecker ();
+}
+
+applyRaw /`Ext.intro _ (lsucc i) _ _ _ (BOOL_Ext G L i)/ >> auto.
+5:{
+    unfold /BOOL in HBoolGlueTy, TP in HBoolGlueTy/.
+    unfold /Ext.wk, TP/.
+    assumption.
+}
+{
+    unfold /BOOL in HBoolGlueTy, TP in HBoolGlueTy/.
+    infer /Ext.wk (TP G L i)/ /HtTPUniv/.
+    unfold /Ext.wk in HtTPUniv/.
+    intro /z H/. 
+    unfold /Ext.wk in H/. reduce /H/.
+    unfold /Ext.wk, TP, TP in H/. 
+    reduce //.
+    rewrite /<- Glue.syn_eq _ z (Glue.glue _ (fn z . `boolean (L z)) _)/ >> auto.
+    eqtp /`tp (L z)/ >> auto.
+    rewriteRaw /-> Glue.beta1 _/.
+    typecheck_goal 5;
+    6:{
+        unfold /TP_Sem/. reduce //.
+        apply /Ext.intro/.
+        reduce //.
+        intro /z' _/.
+        rewrite /-> Glue.syn_eqty _ z'/.
+        reduce //.
+        reflexivity.
+    }
+    typechecker ();
+}
+typechecker ();
+qed ();
+
+endModule ();

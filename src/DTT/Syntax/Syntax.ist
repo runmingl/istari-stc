@@ -1,0 +1,232 @@
+beginModule "DTTSyn";
+
+define /Sig i/
+/
+	exists 
+	(tp : U i)
+	(tm : tp -> U i)
+    (* pi *)
+	(pi  : forall (A : tp) . (tm A -> tp) -> tp)
+	(lam : forall (A : tp) (B : tm A -> tp) . (forall (a : tm A) . tm (B a)) -> tm (pi A B))
+	(app : forall (A : tp) (B : tm A -> tp) . tm (pi A B) -> forall (a : tm A) . tm (B a))
+	(beta_pi : forall (A : tp) (B : tm A -> tp) (f : forall (a : tm A) . tm (B a)) .
+		app A B (lam A B f) = f : _)
+	(eta_pi : forall (A : tp) (B : tm A -> tp) (e : tm (pi A B)) .
+		e = lam A B (app A B e) : _)
+	(* booleans *)
+	(bool  : tp)
+	(tt    : tm bool)
+	(ff    : tm bool)
+    (bool_ind : forall (C : tm bool -> tp) (b : tm bool) . tm (C tt) -> tm (C ff) -> tm (C b))
+    (bool_ind_tt : forall (C : tm bool -> tp) (tc : tm (C tt)) (fc : tm (C ff)) .  
+        bool_ind C tt tc fc = tc : _)
+    (bool_ind_ff : forall (C : tm bool -> tp) (tc : tm (C tt)) (fc : tm (C ff)) .
+        bool_ind C ff tc fc = fc : _)
+	. 
+	unit
+//
+	forall (i : level) . U (1 + i)
+/;
+unfold /Sig/.
+inference.
+typecheck.
+qed ();
+
+(* Define convenient operators *)
+define /tp M/
+/
+	M #1
+//
+    forall (M : intersect i . Sig i) .
+	intersect i . U i
+/;
+unfold /tp/.
+inference.
+introOf /M i/. 
+reduce //.
+typecheck.
+qed ();
+
+define /tm {M}/
+/
+	M #2 #1
+//
+    forall (M : intersect i . Sig i) .
+	intersect i . 
+    tp M -> U i
+/;
+unfold /tm/.
+inference.
+introOf /M i/. 
+reduce //.
+unfold /tp/.
+typecheck.
+qed ();
+
+define /pi {M} A B/
+/
+	M #2 #2 #1 A B
+//
+    forall (M : intersect i . Sig i) .
+	forall (A : tp M) . (tm A -> tp M) -> tp M
+/;
+unfold /pi/.
+inference.
+introOf /M/. 
+reduce //.
+unfold /tp at all, tm at all/.
+introOf /A B/.
+reduce //.
+typecheck.
+qed ();
+
+define /lam {M A B}/
+/
+	M #2 #2 #2 #1 A B
+//
+    forall (M : intersect i . Sig i) .
+	forall (A : `tp M) (B : `tm M A -> `tp M) . 
+    (forall (a : `tm M A) . `tm M (B a)) -> `tm M (`pi M A B)
+/;
+unfold /lam/.
+inference.
+introOf /M/. 
+reduce //.
+unfold /tp at all, tm at all, pi/.
+typecheck.
+qed ();
+
+define /app {M A B}/
+/
+    M #2 #2 #2 #2 #1 A B
+//
+    forall (M : intersect i . Sig i) .  
+    forall (A : `tp M) (B : `tm M A -> `tp M) .
+    `tm M (`pi M A B) -> forall (a : `tm M A) . `tm M (B a)
+/;
+unfold /app/.
+inference.
+introOf /M/.
+reduce //.
+unfold /tp at all, tm at all, pi/.
+typecheck.
+qed ();
+
+lemma "beta_pi"
+/
+    forall (M : intersect i . Sig i) .
+    forall (A : tp M) (B : `tm M A -> tp M) (f : forall (a : `tm M A) . `tm M (B a)) .
+        `app M A B (`lam M A B f) = f : _
+/;
+inference.
+intro /M/.
+reduce //.
+unfold /tp at all, pi at all, tm at all, lam, app/.
+exact /M #2 #2 #2 #2 #2 #1/.
+qed ();
+
+lemma "eta_pi"
+/
+    forall (M : intersect i . Sig i) .
+    forall (A : tp M) (B : `tm M A -> tp M) (e : `tm M (`pi M A B)) .
+        e = `lam M A B (`app M A B e) : _   
+/;
+inference.
+intro /M/.
+reduce //.
+unfold /tp at all, pi at all, tm at all, lam, app/.
+exact /M #2 #2 #2 #2 #2 #2 #1/.
+qed ();
+
+define /boolean {M}/
+/
+	M #2 #2 #2 #2 #2 #2 #2 #1
+//
+    forall (M : intersect i . Sig i) .
+	tp M
+/;
+unfold /boolean/.
+inference.
+introOf /M/. 
+reduce //.
+unfold /tp/.
+typecheck.
+qed ();
+
+define /tt {M}/
+/
+	M #2 #2 #2 #2 #2 #2 #2 #2 #1
+//
+    forall (M : intersect i . Sig i) .
+	tm (`boolean M)
+/;
+unfold /tt/.
+inference.
+introOf /M/. 
+reduce //.
+unfold /tm, boolean/.
+typecheck.
+qed ();
+
+define /ff {M}/
+/
+    M #2 #2 #2 #2 #2 #2 #2 #2 #2 #1
+//
+    forall (M : intersect i . Sig i) .
+    tm (`boolean M)
+/;
+unfold /ff/.
+inference.
+introOf /M/.
+reduce //.
+unfold /tm, boolean/.
+typecheck.
+qed ();
+
+define /bool_ind {M}/
+/
+    M #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #1
+//
+    forall (M : intersect i . Sig i) .
+    forall (C : `tm M (`boolean M) -> tp M) (b : `tm M (`boolean M)) .
+    `tm M (C (`tt M)) -> tm (C (`ff M)) -> `tm M (C b)
+/;
+unfold /bool_ind/.
+inference.
+introOf /M/. 
+reduce //.      
+unfold /tp at all, tm at all, boolean at all, tt at all, ff at all/.
+typecheck. 
+qed ();
+
+lemma "bool_ind_tt"
+/
+    forall (M : intersect i . Sig i) 
+    (C : `tm M (`boolean M) -> tp M) 
+    (tc : `tm M (C (`tt M)))
+    (fc : `tm M (C (`ff M))) .
+    `bool_ind M C (`tt M) tc fc = tc : _
+/;
+inference.
+intro /M/.
+reduce //.
+unfold /tp at all, tm at all, boolean at all, tt at all, ff at all, bool_ind/.
+exact /M #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #1/.
+qed ();
+
+lemma "bool_ind_ff"
+/
+    forall (M : intersect i . Sig i) 
+    (C : `tm M (`boolean M) -> tp M) 
+    (tc : `tm M (C (`tt M))) 
+    (fc : `tm M (C (`ff M))) .
+    `bool_ind M C (`ff M) tc fc = fc : _
+/;
+inference.
+intro /M/.      
+reduce //.
+unfold /tp at all, tm at all, boolean at all, tt at all, ff at all, bool_ind/.
+exact /M #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #1/.
+qed ();
+
+endModule ();

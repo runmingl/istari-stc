@@ -1,0 +1,28 @@
+
+File.import "../Semantics/Lam.ist";
+
+openModule /Lam/;
+
+beginModule "DemoLam";
+
+lemma "demo"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) .
+    unit
+/;
+intro /M G L i/.
+infer /`LAM M G L i/ /Lam/.
+unfold /LAM_Ext in Lam/.
+unfold /Ext.wk in Lam at all/.
+unfold /LAM in Lam/.
+unfold /Tp.TP_open in Lam at all/.
+unfold /Tm.TMTP_open in Lam at all/.
+
+auto.
+qed ();
+
+endModule ();

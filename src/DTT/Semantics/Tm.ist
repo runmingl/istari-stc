@@ -1,0 +1,171 @@
+File.import "../../Prelude.ist";
+File.import "../../tacticlib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /DTTSyn/;
+
+beginModule "Tm";
+
+File.import "Tp.ist";
+
+openModule /Tp/;
+
+define /TM_Ext {M} G L i/
+/
+    Ext.S (Ext.wk (TP G L i) -> U i) (fn z A . `tm (L z) A)
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    Ext.EXT (fn z . `tp (L z) -> U i) _ _
+/;
+unfold /TM_Ext/.
+inference.
+introOf /M G L i/. reduce //.
+
+infer /TP G L i/ /HtTP/.
+
+typecheck.
+{
+    intro /z/.
+    RuleTactic.arrowEqUniv >> auto.
+    unfold /Ext.wk/.
+    so /Ext.syn_eq_open (Ext.S' (U (1 + i)) (fn z . `tp (L z))) (TP G L i) z/ /Heq/.
+    unfold /Ext.pt in Heq/.
+    auto.
+}
+qed ();
+
+define /TM {M} G L i/
+/
+    fn A . Glue.pi_closed A
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . Ext.t (TM_Ext G L i)
+/;
+unfold /TM/.
+introOf /M G L i/.
+reduce //.
+inference.
+
+so /Glue.glueCM_tp M G (fn z . `tp (L z)) (TP_Sem L i)/ /HtGlty/.
+1:{ apply /TP_Sem_isClosedModal/. }
+
+infer /Ext.S' (U (1 + i)) (fn z . `tp (L z))/ /HtExt/.
+infer /TP G L i/ /HtTP/.
+
+infer /TM_Ext G L i/ /HtTMExt/.
+
+so /Ext.intro (`TM_Ext M G L i)/ /fIntro/.
+applyRaw /fIntro/.
+{
+    intro /z H/. reduce //.
+    RuleTactic.arrowIntroEq >> auto.
+    rename /v0/ /A/.
+    reduce /H/.
+    unfold /Ext.wk in A, TP in A/.
+    infer /Glue.pi_closed A/ /HtA/.
+    (* inference. *)
+    unfold /TP_Sem in HtA/.
+    subsume /U i/ >> auto.
+    so /Ext.syn_eq _ (Glue.pi_closed A) z/ /H2/ >> auto.
+    unfold /Ext.pt in H2/.
+    applyEq /Ext.wk/ /U i/ /H2/ /H2'/ >> auto.
+    unfold /Ext.wk in H2' at all/.
+    etransitivity.
+    { hyp /H2'/. }
+    so /Glue.syn_eq _ z A/ /Heq/. reduce /Heq/.
+    compat.
+    auto.
+}
+{
+    RuleTactic.arrowIntroOf >> auto.
+    rename /v0/ /A/.
+    unfold /Ext.wk in A, TP in A/.
+    infer /Glue.pi_closed A/ /HtA/.
+    unfold /TP_Sem in HtA/.
+    infer /Ext.wk (Glue.pi_closed A)/ /HtAWk/ >> auto.
+    unfold /Ext.wk in HtAWk/.
+    subsume /U i/ >> auto.
+}
+qed ();
+
+define /TM_open {M G L} z A B a/
+/
+    B a
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    intersect (i : level) .
+    forall (z : `SynM M) 
+        (A : Ext.wk (TP G L i))  
+        (B : Ext.wk (TM G L i) A -> Ext.wk (TP G L i))
+        (a : `tm (L z) (TP_open z A)) . 
+    `tp (L z)
+/;
+unfold /TM_open/.
+inference.
+introOf /M G L i z A B a/. reduce //.
+infer /TP G L i/ /HtTP/.
+infer /TM G L i/ /HtTM/.
+
+assert /tp (L z) = Ext.wk (TP G L i) : U (1 + i)/ /TPtp/.
+{
+    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+rewrite /-> Ext.syn_eq _ (TP G L i) z in A/.
+unfold /Ext.pt in A, Ext.wk in A/.
+rewrite /-> Ext.syn_eq _ (TP G L i) z in B/.
+rewrite /-> Ext.syn_eq _ (TM G L i) z in B/.
+unfold /Ext.pt in B at all, Ext.wk in B at all/.
+typecheck.
+unfold /TP_open/.
+reflexivity.
+qed ();
+
+define /TMTP_open {M G L} z A B/
+/
+    B 
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . Sig i) .
+    intersect (i : level) .
+    forall (z : `SynM M)
+        (A : Ext.wk (TP G L i))  
+        (B : Ext.wk (TM G L i) A -> Ext.wk (TP G L i)) .
+    `tm (L z) (TP_open z A) -> `tp (L z) 
+/;
+unfold /TMTP_open/.
+inference.
+introOf /M G L i z A B/. reduce //.
+
+assert /tp (L z) = Ext.wk (TP G L i) : U (1 + i)/ /TPtp/.
+{
+    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+rewrite /-> Ext.syn_eq _ (TP G L i) z in A/.
+unfold /Ext.pt in A, Ext.wk in A/.
+rewrite /-> Ext.syn_eq _ (TP G L i) z in B/.
+rewrite /-> Ext.syn_eq _ (TM G L i) z in B/.
+unfold /Ext.pt in B at all, Ext.wk in B at all/.
+unfold /TP_open/.
+typecheck.
+qed ();
+
+endModule ();

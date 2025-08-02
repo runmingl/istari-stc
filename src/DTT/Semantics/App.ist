@@ -1,0 +1,582 @@
+File.import "../../Prelude.ist";
+File.import "../../tacticlib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /DTTSyn/;
+
+beginModule "App";
+
+File.import "Tp.ist";
+File.import "Tm.ist";
+File.import "Pi.ist";
+
+openModule /Tp/;
+openModule /Tm/;
+openModule /Pi/;
+
+define /APP_Ext {M} G L i A B/
+/
+    Ext.S ( ((Ext.wk (TM G L i)) (Ext.wk (PI G L i) A B)) -> 
+            forall (a : (Ext.wk (TM G L i)) A) . (Ext.wk (TM G L i)) (B a))
+          (fn z . `app (L z) (TP_open z A) (TMTP_open z A B))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) 
+        (A : Ext.wk (TP G L i)) 
+        (B : Ext.wk (TM G L i) A -> Ext.wk (TP G L i)) .
+    `Ext.EXT M (lsucc i) (fn z . (tm (pi (TP_open z A) (TMTP_open z A B))) -> 
+                                 forall (a : tm (TP_open z A)) . tm (TM_open z A B a)) _ _
+/;
+unfold /APP_Ext/.
+inference.
+introOf /M G L i A B/. reduce //.
+
+assert /forall (z : SynM) . tm (TP_open z A) = Ext.wk (TM G L i) A : U i/ /TMtm/.
+{
+    inference.    
+    intro /z/.
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    fold /TP_open z A at 1/.
+    reflexivity.
+}
+
+assert /forall (z : SynM) . Ext.wk (TP G L i) = tp (L z) : U (1 + i)/ /TPtp/.
+{
+    inference.
+    intro /z/.
+    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+typecheck.
+{
+    unfold /TM_open, TMTP_open/.
+    reflexivity.
+}
+reduce //.
+intro /z/.
+infer /TM G L i/ /Htm/.
+unfold /TM_Ext in Htm/.
+rewrite /-> Ext.syn_eq _ (TM G L i) z at all/.
+{
+    apply /Ext.eqUnderSyn _ _ _ z/.
+}
+{
+    symmetry.
+    apply /Ext.syn_eq _ _ z/.
+}
+RuleTactic.arrowEqUniv >> auto.
+{
+    infer /PI G L i/ /HtPI/.
+    unfold /PI_Ext in HtPI/.
+    rewrite /-> Ext.syn_eq _ (PI G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    fold /TP_open z A at 0/.
+    fold /TMTP_open z A B at 0/.
+    reflexivity.
+}
+{
+    RuleTactic.forallEqUniv >> auto.
+    {
+        unfold /Ext.pt at all, Ext.wk at all/.
+        fold /TP_open z A at 0/.
+        reflexivity.
+    }
+    {
+        unfold /Ext.pt at all, Ext.wk at all/.
+        fold /TM_open z A B a at 0/.
+        reflexivity.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        fold /TP_open z A at 0/.
+        reflexivity.
+    }
+}
+qed ();
+
+
+define /APP {M} G L i A B/
+/
+    fn e a . (Glue.pi_closed e) a
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    forall (A : Ext.wk (TP G L i)) 
+        (B : Ext.wk (TM G L i) A -> Ext.wk (TP G L i)) .
+    (Ext.t (APP_Ext G L i A B))
+/;
+unfold /APP/.
+inference.
+introOf /M G L i A B/. reduce //.
+
+infer /Ext.S' (U (1 + i)) (fn z . `tp (L z))/ /HtExt/.
+infer /TP G L i/ /HtTP/.
+infer /APP_Ext G L i/ /HtAPPExt/.
+
+infer /TM G L i/ /HtTM/.
+unfold /TM_Ext in HtTM/.
+infer /PI G L i/ /HPI/.
+unfold /PI_Ext in HPI/.
+
+infer /PI_SEM_Ext G L i A B/ /HtPISem/.
+
+so /Glue.glueCM_tp M G (fn z . `tp (L z)) (TP_Sem L i)/ /HtGlty/.
+1:{ apply /TP_Sem_isClosedModal/. }
+
+assert /forall (z : SynM) . (Ext.wk (TP G L i) -> U i) = (tp (L z) -> U i) : U (1 + i)/ /Tptp/.
+{
+    inference.
+    intro /z'/.
+    reduce //.
+    rewrite /-> Ext.syn_eq _ (TP G L i) z' at all/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+assert /forall (z : SynM) . pi (TP_open z A) (TMTP_open z A B) = pi (TP_open z A) (TM_open z A B) : tp (L z)/ /PiEq/.
+{
+    inference.
+    intro /z/. 
+    reduce //.
+    unfold /TMTP_open/.
+    unfold /TM_open/.
+    compat.
+    RuleTactic.arrowEta >> auto.
+    typecheck.
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        unfold /Ext.pt, Ext.wk/.
+        fold /(TP_open z A) at 1/.
+        reflexivity.
+    }
+    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+so /Glue.glueCM_tp M G 
+    (fn z . `tm (L z) (`pi (L z) (TP_open z A) (TMTP_open z A B)))
+    (fn f . Ext.t (PI_SEM_Ext G L i A B f))/ /HtPiGlty/.
+2:{ apply /PI_SEM_Ext_isCloseModal/. }
+1:{ 
+    auto. 
+}
+so /Ext.intro (`APP_Ext M G L i A B)/ /fIntro/.
+1:{
+    unfold /TMTP_open/.
+    fold /TM_open z A B a/.
+    reflexivity.
+}
+applyRaw /fIntro/.
+{
+    intro /z H/. 
+    reduce /H/.
+    reduce //.
+    transitivity /fn e a . app e a/.
+    1:{
+        extensionality.
+        reduce //.
+        extensionality.
+        {   
+            rewrite /-> Ext.syn_eq _ (TM G L i) z at all/.  
+            rewrite /-> Ext.syn_eq _ (PI G L i) z/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            fold /TP_open z A at 0/.
+            fold /TMTP_open z A B at 0/.
+            reflexivity.
+        }
+        reduce //.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z in v0/.
+        rewrite /-> Ext.syn_eq _ (PI G L i) z in v0/.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z in a/.
+        unfold /Ext.pt in v0 at all , Ext.wk in v0 at all/.
+        unfold /Ext.pt in a at all , Ext.wk in a at all/.
+        fold /TP_open z A in v0/.
+        fold /TMTP_open z A B in v0/.
+        fold /TP_open z A in a/.
+        reflexivity.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        {
+            rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            fold /TP_open z A at 1/.
+            reflexivity.
+        }
+        unfold /Ext.pt, Ext.wk/.
+        fold /TMTP_open z A B a/.
+        reflexivity.
+    }
+    {
+        RuleTactic.arrowIntroEq >> auto.
+        RuleTactic.forallIntroEq >> auto.
+        rename /v0/ /e/.
+        unfold /Ext.wk in e at all, TM in e, PI in e/.
+        assert /Glue.pi_closed
+          (Glue.glue
+             (G (fn z1 . tp (L z1)) (TP_Sem L i))
+             (fn z1 . pi (TP_open z1 A) (TMTP_open z1 A B))
+             (Glue.t
+                (G
+                   (fn z1 . tm (pi (TP_open z1 A) (TMTP_open z1 A B)))
+                   (fn f . Ext.t (PI_SEM_Ext G L i A B f))))) = (Glue.t
+                (G
+                   (fn z1 . tm (pi (TP_open z1 A) (TMTP_open z1 A B)))
+                   (fn f . Ext.t
+         (PI_SEM_Ext G L i A B f)))) : _/ /Heq/.
+        {
+            inference.
+            reduce //.
+
+            rewriteRaw /-> Glue.beta2/.
+            typecheck_goals [5, 4, 4, 3, 2, 1];
+            {
+                unfold /TP_Sem in v0/.
+                reduce /v0/.
+                assert /v0 : U i/ /Htv0/.
+                {
+                    subsume /Ext.t (Ext.S' (U i) (fn z1 . tm (pi (TP_open z1 A) (TMTP_open z1 A B))))/ >> auto.
+                    apply /Ext.subtype/.
+                }
+                inference.
+                typecheck. 
+                auto. 
+            }
+            1:{ 
+                reflexivity. 
+                auto.
+            }            
+            {
+                unfold /TP_Sem/.
+                apply /Ext.intro/.
+                1:{
+                    auto.
+                }
+                intro /z' _/.
+                reduce //.
+                rewrite /-> Glue.syn_eqty _ z'/ >> auto.
+            }
+        }
+        assert /e : Glue.t
+            (G
+               (fn z1 . tm (pi (TP_open z1 A) (TMTP_open z1 A B)))
+               (fn f . Ext.t (PI_SEM_Ext G L i A B f)))/ /Tye/.
+        {
+            typecheck.
+            auto.
+        }
+        infer /Glue.pi_closed e/ /Htpe/.
+        { auto. }
+        reduce /Htpe/.
+        unfold /PI_SEM_Ext in Htpe/.
+        so /Ext.syn_eq _ (Glue.pi_closed e) z/ /H2/ >> auto.
+        3:{
+            intro /z'/.
+            reduce //.
+            rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
+            {
+                apply /Ext.eqUnderSyn _ _ _ z'/.
+            }
+            {
+                symmetry.
+                apply /Ext.syn_eq _ _ z'/.
+            }
+            unfold /Ext.pt at all, Ext.wk at all/.
+            fold /TP_open z' A at 0/.
+            RuleTactic.forallEqUniv >> auto.
+            unfold /TM_open/.
+            reflexivity.
+            {
+                rewrite /-> Ext.syn_eq _ (TP G L i) z' at all/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            fold /TP_open z' A at 1/.
+            reflexivity.
+        }
+        1:{
+            reduce //.    
+            auto.
+        }
+        1:{
+            reduce //.    
+            auto.
+        }
+        unfold /Ext.pt in H2/.
+        assert /Glue.pi_closed e = app (Glue.pi_open e z) : (forall (a : Ext.wk (TM G L i) A) . Ext.wk (TM G L i) (B a))/ /H2'/.
+        {
+            subsume /Ext.t (Ext.S
+              (forall (a : Ext.wk (TM G L i) A) . Ext.wk (TM G L i) (B a))
+              (fn z1 . app (Glue.pi_open e z1)))/ >> auto.
+            assert /forall (z1 : SynM) . (Ext.wk (TP G L i) -> U i) = (fn z2 . tp (L z2) -> U i) z1 : U (1 + i)/ /H3/.
+            {
+                inference.
+                intro /z'/.
+                reduce //.
+                rewrite /-> Ext.syn_eq _ (TP G L i) z' at all/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            apply /Ext.subtype/ >> auto.
+            {
+                unfold /TM_Ext/.
+                reflexivity.
+            }
+            {
+                reduce //.
+                auto.
+            }
+            {
+                unfold /TM_Ext/.
+                reflexivity.
+            }
+            {
+                unfold /TM_Ext/.
+                reflexivity.
+            }
+            {
+                reduce //.
+                auto.
+            }
+            {
+                reduce //.
+                auto.
+            }
+            {
+                intro /z'/.
+                reduce //.
+                rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
+                {
+                    apply /Ext.eqUnderSyn _ _ _ z'/.
+                }
+                {
+                    symmetry.
+                    apply /Ext.syn_eq _ _ z'/.
+                }
+                unfold /Ext.pt at all, Ext.wk at all/.
+                fold /TP_open z' A at 0/.
+                RuleTactic.forallEqUniv >> auto.
+                unfold /TM_open/.
+                reflexivity.
+                {
+                    rewrite /-> Ext.syn_eq _ (TP G L i) z' at all/.
+                    unfold /Ext.pt at all, Ext.wk at all/.
+                    reflexivity.
+                }
+                rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                fold /TP_open z' A at 1/.
+                reflexivity.
+            }
+        }
+        so /Glue.syn_eq _ z e/ /He/.
+        1:{
+            auto. 
+        }
+        reduce /He/.
+        transitivity /`app (L z) (TP_open z A) (TM_open z A B) (Glue.pi_open e z) a/.
+        {
+            inference.
+
+            val Term.Lam (_, term) = parseCurr /fn a . Ext.wk (TM G L i) (B a)/;
+
+            RuleTactic.forallElimEq 
+                (parseCurr /Ext.wk (TM G L i) A/)
+                term
+                (parseCurr /(Glue.pi_closed e)/)
+                (parseCurr /app (Glue.pi_open e z)/)
+                (parseCurr /_/)
+                (parseCurr /_/) >> auto.
+        
+            clear /He/.
+
+            unfold /Ext.wk at all/.
+            unfold /Ext.wk in H2' at all/.
+            apply /H2'/.
+        }
+        {
+            compat.
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                {
+                    rewrite /-> Ext.syn_eq _ (TM G L i) z at all/.
+                    unfold /Ext.pt at all, Ext.wk at all/.
+                    fold /TP_open z A at 0/.
+                    reflexivity.
+                }
+                unfold /Ext.pt at all, Ext.wk at all/.
+                fold /TM_open z A B a at 0/.
+                reflexivity.
+                rewrite /-> Ext.syn_eq _ (TM G L i) z at all/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                fold /TP_open z A at 0/.
+                reflexivity.
+            }
+            {
+                unfold /TM_open/.
+                unfold /TMTP_open/.
+                symmetry.
+                RuleTactic.arrowEta >> auto.
+                typecheck. 
+                {
+                    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                    unfold /Ext.pt, Ext.wk/.
+                    fold /(TP_open z A) at 1/.
+                    reflexivity.
+                }
+                rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            {
+                eqtp /`tm (L z) (`pi (L z) (`TP_open M G L z A) (`TMTP_open M G L z A B))/ >> auto.
+            }
+            rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            fold /TP_open z A/.
+            reflexivity.
+        }
+    }
+}
+{
+    RuleTactic.arrowIntroOf >> auto.
+    RuleTactic.forallIntroOf >> auto.
+    rename /v0/ /e/.
+    unfold /Ext.wk in e at all, TM in e, PI in e/.
+    assert /Glue.pi_closed
+          (Glue.glue
+             (G (fn z1 . tp (L z1)) (TP_Sem L i))
+             (fn z1 . pi (TP_open z1 A) (TMTP_open z1 A B))
+             (Glue.t
+                (G
+                   (fn z1 . tm (pi (TP_open z1 A) (TMTP_open z1 A B)))
+                   (fn f . Ext.t (PI_SEM_Ext G L i A B f))))) = (Glue.t
+                (G
+                   (fn z1 . tm (pi (TP_open z1 A) (TMTP_open z1 A B)))
+                   (fn f . Ext.t (PI_SEM_Ext G L i A B f)))) : _/ /Heq/.
+    {
+        inference.
+        rewriteRaw /-> Glue.beta2/.
+        typecheck_goals [5, 4, 4, 3, 2, 1];
+        {
+            unfold /TP_Sem in v0/.
+            reduce /v0/.
+            assert /v0 : U i/ /Htv0/.
+            {
+                subsume /Ext.t (Ext.S' (U i) (fn z1 . tm (pi (TP_open z1 A) (TMTP_open z1 A B))))/ >> auto.
+                apply /Ext.subtype/.
+            }
+            inference.
+            typecheck. 
+            auto.
+        }
+        1:{ 
+            reflexivity. 
+            auto.
+        }
+        {
+            unfold /TP_Sem/.
+            apply /Ext.intro/.
+            1:{
+                auto.
+            }
+            intro /z' _/.
+            reduce //.
+            rewrite /-> Glue.syn_eqty _ z'/.
+            {
+                auto.
+            }
+            reduce //.
+            reflexivity.
+        }
+    }
+    assert /e : Glue.t
+        (G
+           (fn z1 . tm (pi (TP_open z1 A) (TMTP_open z1 A B)))
+           (fn f . Ext.t (PI_SEM_Ext G L i A B f)))/ /Tye/.
+    {
+        typecheck.
+        auto.
+    }
+    infer /Glue.pi_closed e/ /Htpe/.
+    { auto. }
+    unfold /PI_SEM_Ext in Htpe/.
+    reduce /Htpe/.
+    assert /Glue.pi_closed e : forall (a : Ext.wk (TM G L i) A) . Ext.wk (TM G L i) (B a)/ /pe/.
+    {
+        subsume /Ext.t (Ext.S
+          (forall (a : Ext.wk (TM G L i) A) . Ext.wk (TM G L i) (B a))
+          (fn z1 . app (Glue.pi_open e z1)))/ >> auto.
+        assert /forall (z1 : SynM) . (Ext.wk (TP G L i) -> U i) = (fn z2 . tp (L z2) -> U i) z1 : U (1 + i)/ /H3/.
+        {
+            inference.
+            intro /z'/.
+            reduce //.
+            rewrite /-> Ext.syn_eq _ (TP G L i) z' at all/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            reflexivity.
+        }
+        apply /Ext.subtype/ >> auto.
+        {
+            unfold /TM_Ext/.
+            reflexivity.
+        }
+        {
+            reduce //.
+            auto.
+        }
+        {
+            unfold /TM_Ext/.
+            reflexivity.
+        }
+        {
+            unfold /TM_Ext/.
+            reflexivity.
+        }
+        {
+            reduce //.
+            auto.
+        }
+        {
+            reduce //.
+            auto.
+        }
+        intro /z'/.
+        reduce //.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
+        {
+            apply /Ext.eqUnderSyn _ _ _ z'/.
+        }
+        {
+            symmetry.
+            apply /Ext.syn_eq _ _ z'/.
+        }
+        unfold /Ext.pt at all, Ext.wk at all/.
+        fold /TP_open z' A at 0/.
+        unfold /TM_open/.
+        reflexivity.
+        {
+            rewrite /-> Ext.syn_eq _ (TP G L i) z' at all/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            reflexivity.
+        }
+        rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        fold /TP_open z' A at 1/.
+        reflexivity.
+    }
+    typecheck.
+    auto.
+}
+qed ();
+
+endModule ();

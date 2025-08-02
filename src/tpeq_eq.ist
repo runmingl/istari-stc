@@ -1,0 +1,80 @@
+beginModule "TpEqEq";
+
+define /eqtp_eq {A B} a b/ 
+/
+	a = b : _
+//
+	intersect i . 
+	forall (A B : U i) (a : A) (b : B) . 
+	(A = B : type) -g>
+	U i
+/;
+unfold /eqtp_eq/.
+inference. 
+typecheck.
+qed ();
+
+define /jmeq {A B} a b/ 
+/
+	(A = B : type) &g (a = b : _)
+//
+	intersect i . 
+	forall (A B : U i) (a : A) (b : B) . 
+	U i
+/;
+unfold /jmeq/.
+inference. 
+typecheck.
+qed ();
+
+lemma "jmeq_eq1" 
+/
+	intersect i . 
+	forall (A B : U i) (a : A) (b : B) . 
+	jmeq a b -> (a = b : A)
+/;
+inference.
+unfold /jmeq/.
+intro /i A B a b [Heqtp Heq]/.
+hyp /Heq/.
+qed ();
+
+lemma "jmeq_eq2" 
+/
+	intersect i . 
+	forall (A B : U i) (a : A) (b : B) . 
+	jmeq a b -> (a = b : B)
+/;
+inference.
+unfold /jmeq/.
+intro /i A B a b [Heqtp Heq]/.
+rewrite /<- Heqtp/.
+hyp /Heq/.
+qed ();
+
+lemma "eqtp_eq_eq1" 
+/
+	intersect i . 
+	forall (A B : U i) (a : A) (b : B) . 
+	(A = B : type) -> 
+	eqtp_eq a b -> (a = b : A)
+/;
+inference.
+unfold /eqtp_eq/.
+intro /i A B a b Heqtp Heq/.
+hyp /Heq/.
+qed ();
+
+lemma "eqtp_eq_eq2" 
+/
+	intersect i . 
+	forall (A B : U i) (a : A) (b : B) . 
+	(A = B : type) -> 
+	eqtp_eq a b -> (a = b : B)
+/;
+inference.
+unfold /eqtp_eq/.
+intro /i A B a b Heqtp Heq/.
+rewrite /<- Heqtp/.
+hyp /Heq/.
+qed ();

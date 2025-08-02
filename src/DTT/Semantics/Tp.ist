@@ -1,0 +1,86 @@
+File.import "../../Prelude.ist";
+File.import "../../tacticlib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /DTTSyn/;
+
+beginModule "Tp";
+
+define /TP_Sem {M} L i/ 
+/
+    fn A . Ext.t (Ext.S' (U i) (fn z . `tm (L z) (A z)))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (L : `SynM M -> intersect i . Sig i) .
+    forall i .
+    (forall (z : `SynM M) . `tp (L z)) -> U (1 + i)
+/;
+unfold /TP_Sem/.
+inference.
+typecheck.
+qed ();
+
+lemma "TP_Sem_isClosedModal"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (L : `SynM M -> intersect i . Sig i) .
+    forall i A . 
+        isClosedModalM M (TP_Sem L i A)
+/;
+inference.
+intro /M L i A/.
+unfold /TP_Sem/.
+apply /Ext.isClosedModal/.
+qed ();
+
+define /TP {M} G L i/
+/
+    Glue.t (G (fn z . `tp (L z)) (TP_Sem L i))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    Ext.t (Ext.S' (U (1 + i)) (fn z . `tp (L z)))
+/;
+unfold /TP/.
+inference.
+introOf /M G L i/. (* Megaloling *)
+reduce //.
+
+infer /Ext.S' (U (1 + i)) (fn z . `tp (L z))/ /HtExt/.
+
+so /Glue.glueCM_tp M G (fn z . `tp (L z)) (TP_Sem L i)/ /HtGlty/.
+1:{ apply /TP_Sem_isClosedModal/. }
+
+apply /Ext.intro/.
+(* Contracts to a point under Syn *)
+intro /z _/.
+rewrite /-> Glue.syn_eqty _ z/ >> auto.
+qed ();
+
+define /TP_open {M G L} z A/
+/
+    A
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    intersect (i : level) .
+    forall (z : `SynM M) (A : Ext.wk (TP G L i)) . `tp (L z)
+/;
+unfold /TP_open/.
+inference.
+introOf /M G L i z A/. reduce //.
+infer /TP G L i/ /HtTP/.
+rewrite /-> Ext.syn_eq _ (TP G L i) z in A/.
+unfold /Ext.pt in A, Ext.wk in A/.
+auto.
+qed ();
+
+endModule ();

@@ -1,0 +1,10 @@
+fun typecheck_goal (i : int) = 
+    (
+            Prover.entern i; 
+            Prover.apply (typecheck);
+            Prover.leave ();
+            ()
+    );
+
+fun typecheck_goals (goals : int list) = 
+    List.app typecheck_goal goals;
