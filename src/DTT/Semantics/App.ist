@@ -29,7 +29,7 @@ define /APP_Ext {M} G L i A B/
         (A : Ext.wk (TP G L i)) 
         (B : Ext.wk (TM G L i) A -> Ext.wk (TP G L i)) .
     `Ext.EXT M (lsucc i) (fn z . (tm (pi (TP_open z A) (TMTP_open z A B))) -> 
-                                 forall (a : tm (TP_open z A)) . tm (TM_open z A B a)) _ _
+                                 forall (a : tm (TP_open z A)) . tm (TMTP_open z A B a)) _ _
 /;
 unfold /APP_Ext/.
 inference.
@@ -55,11 +55,6 @@ assert /forall (z : SynM) . Ext.wk (TP G L i) = tp (L z) : U (1 + i)/ /TPtp/.
 }
 
 typecheck.
-{
-    unfold /TM_open, TMTP_open/.
-    reflexivity.
-}
-reduce //.
 intro /z/.
 infer /TM G L i/ /Htm/.
 unfold /TM_Ext in Htm/.
@@ -90,7 +85,7 @@ RuleTactic.arrowEqUniv >> auto.
     }
     {
         unfold /Ext.pt at all, Ext.wk at all/.
-        fold /TM_open z A B a at 0/.
+        fold /TMTP_open z A B a at 0/.
         reflexivity.
         unfold /Ext.pt at all, Ext.wk at all/.
         fold /TP_open z A at 0/.
@@ -98,7 +93,6 @@ RuleTactic.arrowEqUniv >> auto.
     }
 }
 qed ();
-
 
 define /APP {M} G L i A B/
 /
@@ -141,40 +135,11 @@ assert /forall (z : SynM) . (Ext.wk (TP G L i) -> U i) = (tp (L z) -> U i) : U (
     reflexivity.
 }
 
-assert /forall (z : SynM) . pi (TP_open z A) (TMTP_open z A B) = pi (TP_open z A) (TM_open z A B) : tp (L z)/ /PiEq/.
-{
-    inference.
-    intro /z/. 
-    reduce //.
-    unfold /TMTP_open/.
-    unfold /TM_open/.
-    compat.
-    RuleTactic.arrowEta >> auto.
-    typecheck.
-    {
-        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
-        unfold /Ext.pt, Ext.wk/.
-        fold /(TP_open z A) at 1/.
-        reflexivity.
-    }
-    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
-    unfold /Ext.pt at all, Ext.wk at all/.
-    reflexivity.
-}
-
 so /Glue.glueCM_tp M G 
     (fn z . `tm (L z) (`pi (L z) (TP_open z A) (TMTP_open z A B)))
     (fn f . Ext.t (PI_SEM_Ext G L i A B f))/ /HtPiGlty/.
-2:{ apply /PI_SEM_Ext_isCloseModal/. }
-1:{ 
-    auto. 
-}
+1:{ apply /PI_SEM_Ext_isCloseModal/. }
 so /Ext.intro (`APP_Ext M G L i A B)/ /fIntro/.
-1:{
-    unfold /TMTP_open/.
-    fold /TM_open z A B a/.
-    reflexivity.
-}
 applyRaw /fIntro/.
 {
     intro /z H/. 
@@ -247,18 +212,13 @@ applyRaw /fIntro/.
                 }
                 inference.
                 typecheck. 
-                auto. 
             }
             1:{ 
                 reflexivity. 
-                auto.
             }            
             {
                 unfold /TP_Sem/.
                 apply /Ext.intro/.
-                1:{
-                    auto.
-                }
                 intro /z' _/.
                 reduce //.
                 rewrite /-> Glue.syn_eqty _ z'/ >> auto.
@@ -273,11 +233,10 @@ applyRaw /fIntro/.
             auto.
         }
         infer /Glue.pi_closed e/ /Htpe/.
-        { auto. }
         reduce /Htpe/.
         unfold /PI_SEM_Ext in Htpe/.
         so /Ext.syn_eq _ (Glue.pi_closed e) z/ /H2/ >> auto.
-        3:{
+        1:{
             intro /z'/.
             reduce //.
             rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
@@ -291,25 +250,8 @@ applyRaw /fIntro/.
             unfold /Ext.pt at all, Ext.wk at all/.
             fold /TP_open z' A at 0/.
             RuleTactic.forallEqUniv >> auto.
-            unfold /TM_open/.
+            fold /TMTP_open z' A B a1 at 0/.
             reflexivity.
-            {
-                rewrite /-> Ext.syn_eq _ (TP G L i) z' at all/.
-                unfold /Ext.pt at all, Ext.wk at all/.
-                reflexivity.
-            }
-            rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
-            unfold /Ext.pt at all, Ext.wk at all/.
-            fold /TP_open z' A at 1/.
-            reflexivity.
-        }
-        1:{
-            reduce //.    
-            auto.
-        }
-        1:{
-            reduce //.    
-            auto.
         }
         unfold /Ext.pt in H2/.
         assert /Glue.pi_closed e = app (Glue.pi_open e z) : (forall (a : Ext.wk (TM G L i) A) . Ext.wk (TM G L i) (B a))/ /H2'/.
@@ -332,24 +274,12 @@ applyRaw /fIntro/.
                 reflexivity.
             }
             {
-                reduce //.
-                auto.
-            }
-            {
                 unfold /TM_Ext/.
                 reflexivity.
             }
             {
                 unfold /TM_Ext/.
                 reflexivity.
-            }
-            {
-                reduce //.
-                auto.
-            }
-            {
-                reduce //.
-                auto.
             }
             {
                 intro /z'/.
@@ -365,25 +295,13 @@ applyRaw /fIntro/.
                 unfold /Ext.pt at all, Ext.wk at all/.
                 fold /TP_open z' A at 0/.
                 RuleTactic.forallEqUniv >> auto.
-                unfold /TM_open/.
-                reflexivity.
-                {
-                    rewrite /-> Ext.syn_eq _ (TP G L i) z' at all/.
-                    unfold /Ext.pt at all, Ext.wk at all/.
-                    reflexivity.
-                }
-                rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
-                unfold /Ext.pt at all, Ext.wk at all/.
-                fold /TP_open z' A at 1/.
+                fold /TMTP_open z' A B a1 at 0/.
                 reflexivity.
             }
         }
         so /Glue.syn_eq _ z e/ /He/.
-        1:{
-            auto. 
-        }
         reduce /He/.
-        transitivity /`app (L z) (TP_open z A) (TM_open z A B) (Glue.pi_open e z) a/.
+        transitivity /`app (L z) (TP_open z A) (TMTP_open z A B) (Glue.pi_open e z) a/.
         {
             inference.
 
@@ -414,27 +332,11 @@ applyRaw /fIntro/.
                     reflexivity.
                 }
                 unfold /Ext.pt at all, Ext.wk at all/.
-                fold /TM_open z A B a at 0/.
+                fold /TMTP_open z A B a at 0/.
                 reflexivity.
                 rewrite /-> Ext.syn_eq _ (TM G L i) z at all/.
                 unfold /Ext.pt at all, Ext.wk at all/.
                 fold /TP_open z A at 0/.
-                reflexivity.
-            }
-            {
-                unfold /TM_open/.
-                unfold /TMTP_open/.
-                symmetry.
-                RuleTactic.arrowEta >> auto.
-                typecheck. 
-                {
-                    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
-                    unfold /Ext.pt, Ext.wk/.
-                    fold /(TP_open z A) at 1/.
-                    reflexivity.
-                }
-                rewrite /-> Ext.syn_eq _ (TP G L i) z/.
-                unfold /Ext.pt at all, Ext.wk at all/.
                 reflexivity.
             }
             {
@@ -477,24 +379,16 @@ applyRaw /fIntro/.
             }
             inference.
             typecheck. 
-            auto.
         }
         1:{ 
             reflexivity. 
-            auto.
         }
         {
             unfold /TP_Sem/.
             apply /Ext.intro/.
-            1:{
-                auto.
-            }
             intro /z' _/.
             reduce //.
             rewrite /-> Glue.syn_eqty _ z'/.
-            {
-                auto.
-            }
             reduce //.
             reflexivity.
         }
@@ -508,7 +402,6 @@ applyRaw /fIntro/.
         auto.
     }
     infer /Glue.pi_closed e/ /Htpe/.
-    { auto. }
     unfold /PI_SEM_Ext in Htpe/.
     reduce /Htpe/.
     assert /Glue.pi_closed e : forall (a : Ext.wk (TM G L i) A) . Ext.wk (TM G L i) (B a)/ /pe/.
@@ -531,24 +424,12 @@ applyRaw /fIntro/.
             reflexivity.
         }
         {
-            reduce //.
-            auto.
-        }
-        {
             unfold /TM_Ext/.
             reflexivity.
         }
         {
             unfold /TM_Ext/.
             reflexivity.
-        }
-        {
-            reduce //.
-            auto.
-        }
-        {
-            reduce //.
-            auto.
         }
         intro /z'/.
         reduce //.
@@ -561,21 +442,11 @@ applyRaw /fIntro/.
             apply /Ext.syn_eq _ _ z'/.
         }
         unfold /Ext.pt at all, Ext.wk at all/.
-        fold /TP_open z' A at 0/.
-        unfold /TM_open/.
-        reflexivity.
-        {
-            rewrite /-> Ext.syn_eq _ (TP G L i) z' at all/.
-            unfold /Ext.pt at all, Ext.wk at all/.
-            reflexivity.
-        }
-        rewrite /-> Ext.syn_eq _ (TM G L i) z' at all/.
-        unfold /Ext.pt at all, Ext.wk at all/.
-        fold /TP_open z' A at 1/.
+        fold /TP_open z' A at 0/.   
+        fold /TMTP_open z' A B at 0/.
         reflexivity.
     }
     typecheck.
-    auto.
 }
 qed ();
 

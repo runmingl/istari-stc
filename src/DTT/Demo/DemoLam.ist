@@ -5,6 +5,12 @@ openModule /Lam/;
 
 beginModule "DemoLam";
 
+(*
+ * In Sterling's notation, this is: 
+ *          LAM : { ((a : TM A) -> TM (B a)) -> TM (PI A B) | syn ↪ lam }
+ *          LAM f = glue (fn z . lam f) f 
+ *)
+
 lemma "demo"
 /
     forall 
@@ -12,8 +18,18 @@ lemma "demo"
         (G : intersect i . Glue.GLUE_CM M i)
         (L : `SynM M -> intersect i . Sig i) .
     forall (i : level) .
-    unit
+    (fn A B f .
+        Glue.glue
+          (G (fn z . tm (pi A B)) (fn f1 . Ext.t (Pi.PI_SEM_Ext G L i A B f1)))
+          (fn z . lam f)
+          f)
+        : forall (A : Tp.TP G L i) (B : Tm.TM G L i A -> Tp.TP G L i) .
+            Ext.t
+              (Ext.S
+                 ((forall (a : Tm.TM G L i A) . Tm.TM G L i (B a)) -> Tm.TM G L i (Pi.PI G L i A B))
+                 (fn z . lam))
 /;
+inference.
 intro /M G L i/.
 infer /`LAM M G L i/ /Lam/.
 unfold /LAM_Ext in Lam/.
@@ -21,7 +37,6 @@ unfold /Ext.wk in Lam at all/.
 unfold /LAM in Lam/.
 unfold /Tp.TP_open in Lam at all/.
 unfold /Tm.TMTP_open in Lam at all/.
-
 auto.
 qed ();
 

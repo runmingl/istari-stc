@@ -62,7 +62,7 @@ define /PI_SEM_Ext {M} G L i A B f/
         (B : Ext.wk (TM G L i) A -> Ext.wk (TP G L i))
         (f : forall (z : `SynM M) . tm (`pi (L z) (TP_open z A) (TMTP_open z A B))) .
     `Ext.EXT M i 
-    (fn z . (forall (a : `tm (L z) (TP_open z A)) . `tm (L z) (TM_open z A B a)))
+    (fn z . (forall (a : `tm (L z) (TP_open z A)) . `tm (L z) (TMTP_open z A B a)))
      _ _
 /;
 unfold /PI_SEM_Ext/.
@@ -74,28 +74,17 @@ infer /TM_Ext G L i/ /HtTMExt/.
 introOf /A B f/.  
 reduce //.
 typecheck.
-{
-    assert /tp (L z) = Ext.wk (TP G L i) : U (1 + i)/ /TPtp/.
-    {
-        rewrite /-> Ext.syn_eq _ (TP G L i) z/.
-        unfold /Ext.pt at all, Ext.wk at all/.
-        reflexivity.
-    }
+intro /z/.
+reduce //.
 
-    unfold /TMTP_open/.
-    unfold /TM_open/.
-    compat.
-    RuleTactic.arrowEta >> auto.
-    typecheck.
-    {
-        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
-        unfold /Ext.pt, Ext.wk/.
-        unfold /TP_open/.
-        reflexivity.
-    }
+assert /tp (L z) = Ext.wk (TP G L i) : U (1 + i)/ /TPtp/.
+{
+    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
 }
-intro /z/. reduce //.
-assert /Ext.wk (TM G L i) A = tm (TP_open z A) : U i/ /TMtm/.
+
+assert /Ext.wk (TM G L i) A = tm (TP_open z A) : U i/ /TMtp/.
 {
     rewrite /-> Ext.syn_eq _ (TM G L i) z/.
     unfold /Ext.pt, Ext.wk/.
@@ -104,10 +93,12 @@ assert /Ext.wk (TM G L i) A = tm (TP_open z A) : U i/ /TMtm/.
 }
 
 RuleTactic.forallEqUniv >> auto.
-rewrite /-> Ext.syn_eq _ (TM G L i) z/.
-unfold /Ext.pt at all, Ext.wk at all/.
-fold /TM_open z A B a/.
-reflexivity.
+{
+    unfold /TMTP_open/.
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    unfold /Ext.pt, Ext.wk/.
+    reflexivity.
+}
 qed ();
 
 lemma "PI_SEM_Ext_isCloseModal"
@@ -126,20 +117,6 @@ inference.
 intro /M G L i A B f/.
 infer /PI_SEM_Ext G L i A B f/ /HtExt/.
 apply /Ext.isClosedModal/.
-unfold /TMTP_open/.
-unfold /TM_open/.
-compat.
-RuleTactic.arrowEta >> auto.
-typecheck.
-{
-    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
-    unfold /Ext.pt, Ext.wk/.
-    fold /(TP_open z A) at 1/.
-    reflexivity.
-}
-rewrite /-> Ext.syn_eq _ (TP G L i) z/.
-unfold /Ext.pt at all, Ext.wk at all/.
-reflexivity.
 qed ();
 
 define /PI {M} G L i A B/
@@ -171,32 +148,11 @@ applyRaw /Ext.intro/.
 typecheck_goals [6, 5, 4, 3, 2, 1];
 1:{
     introOf /A B/. reduce //.
-
-    assert /forall (z : SynM) . pi (TP_open z A) (TMTP_open z A B) = pi (TP_open z A) (TM_open z A B) : tp (L z)/ /PiEq/.
-    {
-        inference.
-        intro /z/. 
-        reduce //.
-        unfold /TMTP_open/.
-        unfold /TM_open/.
-        compat.
-        RuleTactic.arrowEta >> auto.
-        typecheck.
-        {
-            rewrite /-> Ext.syn_eq _ (TM G L i) z/.
-            unfold /Ext.pt, Ext.wk/.
-            fold /(TP_open z A) at 1/.
-            reflexivity.
-        }
-        rewrite /-> Ext.syn_eq _ (TP G L i) z/.
-        unfold /Ext.pt at all, Ext.wk at all/.
-        reflexivity.
-    }
-
     so /Glue.glueCM_tp M G 
         (fn z . `tm (L z) (`pi (L z) (TP_open z A) (TMTP_open z A B)))
         (fn f . Ext.t (PI_SEM_Ext G L i A B f))/ /HtPiGlty/ >> auto.
     1:{ apply /PI_SEM_Ext_isCloseModal/. }
+
     unfold /TP, Ext.wk/.
     typecheck1.
     typecheck_goals [4, 4, 2, 1, 0, 0];
@@ -209,32 +165,11 @@ typecheck_goals [6, 5, 4, 3, 2, 1];
         rewrite /-> Glue.syn_eqty _ z/ >> auto.
     }
     typechecker ();
-    auto.
 }
 intro /z H/.
 reduce /concl H/.
 RuleTactic.forallIntroEq >> auto. reintro /A/.
 RuleTactic.arrowIntroEq >> auto. reintro /B/.
-
-assert /forall (z : SynM) . pi (TP_open z A) (TMTP_open z A B) = pi (TP_open z A) (TM_open z A B) : tp (L z)/ /PiEq/.
-{
-    inference.
-    intro /z'/.
-    unfold /TMTP_open/.
-    unfold /TM_open/.
-    compat.
-    RuleTactic.arrowEta >> auto.
-    typecheck.
-    {
-        rewrite /-> Ext.syn_eq _ (TM G L i) z'/.
-        unfold /Ext.pt, Ext.wk/.
-        fold /(TP_open z' A) at 1/.
-        reflexivity.
-    }
-    rewrite /-> Ext.syn_eq _ (TP G L i) z'/.
-    unfold /Ext.pt at all, Ext.wk at all/.
-    reflexivity.
-}
 
 so /Glue.glueCM_tp M G 
     (fn z . `tm (L z) (`pi (L z) (TP_open z A) (TMTP_open z A B)))

@@ -5,15 +5,33 @@ openModule /Bool/;
 
 beginModule "DemoBool";
 
-lemma "demoBool"
+
+(*
+ * In Sterling's notation, this is: 
+ *          BOOL : { TP | syn ↪ bool }
+ *          BOOL = glue (fn z . bool) ((e : tm bool) ⋉ (● (e = tt + e = ff))
+ *)
+
+lemma "demo"
 /
     forall 
         (M : intersect i . PhaseSig i)
         (G : intersect i . Glue.GLUE_CM M i)
         (L : `SynM M -> intersect i . Sig i) .
     forall (i : level) .
-    unit
+    Glue.glue
+         (G (fn z . tp (L z)) (Tp.TP_Sem L i))
+         (fn z . boolean)
+         (Glue.t
+            (G
+               (fn z . tm boolean)
+               (fn e .
+                 ClosedM
+                   (e = (fn (z : SynM) . tt) : (forall (z : SynM) . tm boolean)
+                    % e = (fn (z : SynM) . ff) : (forall (z : SynM) . tm boolean)))))
+         : Ext.t (Ext.S (Tp.TP G L i) (fn z . boolean))
 /;
+inference.
 intro /M G L i/.
 infer /`BOOL M G L i/ /Bool/.
 unfold /BOOL_Ext in Bool/.
@@ -21,7 +39,6 @@ unfold /Ext.wk in Bool/.
 unfold /BOOL in Bool/.
 unfold /BOOL_Sem in Bool/.
 unfold /BOOL_PreSem in Bool/.
-
 auto.
 qed ();
 
