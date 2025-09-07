@@ -565,7 +565,6 @@ unfold /SynM at all, EtaM at all, StarM at all, ClosedM at all, TryM at all/.
 typecheck.
 qed ();
 
-
 define /OpenM {M} A/
 /
     (`SynM M) -> A
@@ -641,6 +640,152 @@ so /Ht a'/ /H2/.
 rewrite /<- H1, <- H2/.
 reflexivity.
 qed ();
+
+define /TryM' {M A C} a bstar beta/
+/
+    `TryM M A (fn a' . a = a' : `ClosedM M A -> C (a')) a (fn z . bstar z) (fn a' . beta a') ()
+//
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedM M A -> U i)
+           (a : `ClosedM M A) 
+           (bstar : forall (z : `SynM M) . (a = `StarM M A z : `ClosedM M A) -> C (`StarM M A z))
+           (beta  : forall (a' : A) . (a = `EtaM M A a' : `ClosedM M A) -> C (`EtaM M A a')) 
+        .
+        (forall (z : SynM) (a : A) . eqtp_eq (bstar z ()) (beta a ())) -g> 
+        C a
+/;
+unfold /TryM'/.
+inference.
+introOf /M i A C a bstar beta/.
+reduce //.
+typecheck. 
+{
+    apply /closed_eq/ >> auto.
+}
+{
+    apply /closed_eq/ >> auto.
+}
+{
+    apply /closed_eq/ >> auto.
+}
+{
+    intro /z a'/.
+    unfold /eqtp_eq/.
+    reduce //.
+    extensionality. 
+    unfold /eqtp_eq in v0/.
+    so /v0 z a'/ /v0eq/.
+    assert /v1 = () : (a = StarM z : ClosedM A)/ /v1eq/.
+    {
+        inference.
+        RuleTactic.eqExt >> auto.
+    }
+    rewrite /-> v1eq at all/.
+    {
+        apply /closed_eq/ >> auto.
+    }
+    {
+        apply /closed_eq/ >> auto.
+    }
+    {
+        apply /closed_eq/ >> auto.
+    }
+    {
+        apply /closed_eq/ >> auto.
+    }
+    auto. 
+}
+qed ();
+
+lemma "TryM'_beta1"
+/
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedM M A -> U i)
+           (a : A)
+           (bstar : forall (z : `SynM M) . (`EtaM M A a = `StarM M A z : `ClosedM M A) -> C (`StarM M A z))
+           (beta  : forall (a' : A) . (`EtaM M A a = `EtaM M A a' : `ClosedM M A) -> C (`EtaM M A a')) 
+        .
+        (forall (z : SynM) (a : A) . eqtp_eq (bstar z ()) (beta a ())) -g> 
+        `TryM' M A C (`EtaM M A a) bstar beta = beta a () : C (`EtaM M A a)
+/;
+inference.
+intro /M i A C a bstar beta H/.
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+unfold /TryM'/.
+so /`TryM_beta1 M A (fn a' . (`EtaM M A a = a' : `ClosedM M A) -> C (a')) (fn z . bstar z) (fn a' . beta a') a/ /beta1/.
+{
+    reduce /beta1/.
+    decompEq 1 / (`EtaM M A a = `EtaM M A a : `ClosedM M A -> C (`EtaM M A a))/ >> auto.
+}
+reduce //.
+unfold /eqtp_eq in H/.
+unfold /eqtp_eq/.
+intro /z a'/.
+extensionality.
+assert /v0 = () : (`EtaM M A a = `StarM M A z : `ClosedM M A)/ /v0eq/.
+{
+    inference.
+    RuleTactic.eqExt >> auto.
+}
+rewrite /-> v0eq at all/.
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+auto. 
+qed ();
+
+lemma "TryM'_beta2"
+/
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedM M A -> U i)
+           (z : `SynM M)
+           (bstar : forall (z' : `SynM M) . (`StarM M A z = `StarM M A z' : `ClosedM M A) -> C (`StarM M A z))
+           (beta  : forall (a' : A) . (`StarM M A z = `EtaM M A a' : `ClosedM M A) -> C (`EtaM M A a')) 
+        .
+        (forall (z : SynM) (a : A) . eqtp_eq (bstar z ()) (beta a ())) -g> 
+        `TryM' M A C (`StarM M A z) bstar beta = bstar z () : C (`StarM M A z)
+/;
+inference.
+intro /M i A C z bstar beta H/.
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+unfold /TryM'/.
+so /`TryM_beta2 M A (fn a' . (`StarM M A z = a' : `ClosedM M A) -> C (a')) z (fn z' . bstar z') (fn a' . beta a')/ /beta2/.
+{
+    reduce /beta2/.
+    decompEq 1 / (`StarM M A z = `StarM M A z : `ClosedM M A -> C (`StarM M A z))/ >> auto.
+}
+{ apply /closed_eq/ >> auto. }
+reduce //.
+unfold /eqtp_eq in H/.
+unfold /eqtp_eq/.
+intro /z' a'/.
+extensionality.
+assert /v0 = () : (`StarM M A z = `StarM M A z' : `ClosedM M A)/ /v0eq/.
+{
+    inference.
+    RuleTactic.eqExt >> auto.
+}
+rewrite /-> v0eq at all/.
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+{ apply /closed_eq/ >> auto. }
+eqtp /C (StarM z)/.
+{
+    compat. 
+    apply /closed_eq/ >> auto.
+}
+auto.
+qed ();
+
 
 beginModule "Ext";
 

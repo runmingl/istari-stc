@@ -1,0 +1,36 @@
+beginModule "Demo";
+
+File.import "../Semantics/Pi_eta.ist";
+
+openModule /PiEta/;
+
+(*
+ * In Sterling's notation, this is: 
+ *          PI_ETA : e = LAM (APP e)
+ *          PI_ETA = ()
+ *)
+
+lemma "demoPIETA"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    
+    forall
+        (A : Tp.TP G L i)
+        (B : Tm.TM G L i A -> Tp.TP G L i)
+        (e : Tm.TM G L i (Pi.PI G L i A B)) .
+        
+        e = Lam.LAM G L i A B (App.APP G L i A B e) : Tm.TM G L i (Pi.PI G L i A B)
+/;
+inference. 
+intro /M G L i/.
+infer /PI_ETA M G L i/ /PiEta/.
+unfold /Ext.wk in PiEta at all/.
+exact /PI_ETA M G L i/.
+qed ();
+
+endModule ();
+

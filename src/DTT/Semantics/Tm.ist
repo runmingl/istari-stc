@@ -96,44 +96,6 @@ applyRaw /fIntro/.
 }
 qed ();
 
-define /TM_open {M G L} z A B a/
-/
-    B a
-//
-    forall
-        (M : intersect i . PhaseSig i)
-        (G : intersect i . Glue.GLUE_CM M i) 
-        (L : `SynM M -> intersect i . Sig i) .
-    intersect (i : level) .
-    forall (z : `SynM M) 
-        (A : Ext.wk (TP G L i))  
-        (B : Ext.wk (TM G L i) A -> Ext.wk (TP G L i))
-        (a : `tm (L z) (TP_open z A)) . 
-    `tp (L z)
-/;
-unfold /TM_open/.
-inference.
-introOf /M G L i z A B a/. reduce //.
-infer /TP G L i/ /HtTP/.
-infer /TM G L i/ /HtTM/.
-
-assert /tp (L z) = Ext.wk (TP G L i) : U (1 + i)/ /TPtp/.
-{
-    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
-    unfold /Ext.pt at all, Ext.wk at all/.
-    reflexivity.
-}
-
-rewrite /-> Ext.syn_eq _ (TP G L i) z in A/.
-unfold /Ext.pt in A, Ext.wk in A/.
-rewrite /-> Ext.syn_eq _ (TP G L i) z in B/.
-rewrite /-> Ext.syn_eq _ (TM G L i) z in B/.
-unfold /Ext.pt in B at all, Ext.wk in B at all/.
-typecheck.
-unfold /TP_open/.
-reflexivity.
-qed ();
-
 define /TMTP_open {M G L} z A B/
 /
     B 

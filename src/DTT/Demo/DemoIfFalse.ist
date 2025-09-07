@@ -1,0 +1,36 @@
+beginModule "Demo";
+
+File.import "../Semantics/If_false.ist";
+
+openModule /IfFalse/;
+
+(*
+ * In Sterling's notation, this is: 
+ *          IF_FALSE : IF FALSE C c0 c1 = c1
+ *          IF_FALSE = ()
+ *)
+
+lemma "demoIFFALSE"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    
+    forall
+        (C : Tm.TM G L i (Bool.BOOL G L i) -> Tp.TP G L i)
+        (c0 : Tm.TM G L i (C (True.TT G L i)))
+        (c1 : Tm.TM G L i (C (False.FF G L i))) .
+        
+        If.IF G L i C (False.FF G L i) c0 c1 = c1 : Tm.TM G L i (C (False.FF G L i))
+/;
+inference. 
+intro /M G L i/.
+infer /`IF_FF M G L i/ /IfFalse/.
+unfold /Ext.wk in IfFalse at all/.
+exact /`IF_FF M G L i/.
+qed ();
+
+endModule ();
+

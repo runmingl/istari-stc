@@ -1,0 +1,37 @@
+beginModule "Demo";
+
+File.import "../Semantics/True.ist";
+
+openModule /True/;
+
+(*
+ * In Sterling's notation, this is: 
+ *          TRUE : { TM (BOOL) | syn ↪ true }
+ *.         TRUE = glue (fn z . true) (η● (inl ()))
+ *)
+
+lemma "demoTRUE"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    
+    Glue.glue (G (fn z . tm boolean) (Bool.BOOL_Sem L))
+        (fn z . tt)
+        (EtaM (inl ()))
+         : Ext.t (Ext.S (Tm.TM G L i (Bool.BOOL G L i)) (fn z . tt))
+/;
+intro /M G L i/.
+infer /`TT M G L i/ /True/.
+unfold /TT in True/.
+unfold /TT_Sem in True/.
+unfold /TT_Ext in True/.
+unfold /Ext.wk in True at all/.
+
+auto. 
+qed ();
+
+endModule ();
+

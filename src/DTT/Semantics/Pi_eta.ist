@@ -19,7 +19,7 @@ openModule /Pi/;
 openModule /Lam/;
 openModule /App/;
 
-lemma "ARR_ETA"
+lemma "PI_ETA"
 / 
     forall 
         (M : intersect i . PhaseSig i)
@@ -311,7 +311,9 @@ assert /(fn z . lam (fn a . Glue.pi_closed e a)) = Glue.pi_open e : _/ /HeqLam/.
             compat.
             RuleTactic.forallIntroEq >> auto.
 
-            val Term.Lam (_, term) = parseCurr /fn a . tm (TMTP_open z A B a)/;
+            val term = case parseCurr /fn a . tm (TMTP_open z A B a)/ of 
+                    | Term.Lam (_, term) => term
+                    | _ => parseCurr /()/;
 
             RuleTactic.forallElimEq 
                 (parseCurr /tm (TP_open z A)/)

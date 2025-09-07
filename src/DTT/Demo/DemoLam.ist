@@ -11,13 +11,14 @@ beginModule "DemoLam";
  *          LAM f = glue (fn z . lam f) f 
  *)
 
-lemma "demo"
+lemma "demoLAM"
 /
     forall 
         (M : intersect i . PhaseSig i)
         (G : intersect i . Glue.GLUE_CM M i)
         (L : `SynM M -> intersect i . Sig i) .
     forall (i : level) .
+    
     (fn A B f .
         Glue.glue
           (G (fn z . tm (pi A B)) (fn f1 . Ext.t (Pi.PI_SEM_Ext G L i A B f1)))

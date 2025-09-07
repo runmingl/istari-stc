@@ -1,0 +1,34 @@
+beginModule "Demo";
+
+File.import "../Semantics/Tp.ist";
+
+openModule /Tp/;
+
+(*
+ * In Sterling's notation, this is: 
+ *          TP : { U | syn ↪ tp }
+ *          TP = (A : tp) ⋉ { U | syn ↪ tm A }
+ *)
+
+lemma "demoTP"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    
+    Glue.t (G 
+        (fn z . tp (L z)) 
+        (fn A . Ext.t (Ext.S' (U i) (fn z . tm (A z)))))
+       : Ext.t (Ext.S' (U (1 + i)) (fn z . tp (L z)))
+/;
+intro /M G L i/.
+infer /`TP M G L i/ /Tp/.
+unfold /TP in Tp/.
+unfold /TP_Sem in Tp/.
+auto. 
+qed ();
+
+endModule ();
+

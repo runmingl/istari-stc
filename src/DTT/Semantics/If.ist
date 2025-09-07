@@ -1,0 +1,1808 @@
+File.import "../../Prelude.ist";
+File.import "../../tacticlib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /DTTSyn/;
+
+beginModule "If";
+
+File.import "Tp.ist";
+File.import "Tm.ist";
+File.import "Bool.ist";
+File.import "True.ist";
+File.import "False.ist";
+
+openModule /Tp/;
+openModule /Tm/;
+openModule /Bool/;
+openModule /True/;
+openModule /False/;
+
+define /IF_TERM {M} G L i C b c0 c1/
+/
+    `TryM' M _ _ (Glue.pi_closed b) 
+        (fn z p . `bool_ind (L z) C b c0 c1)
+        (fn lr p . sum_case lr (fn _ . c0) (fn _ . c1))
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) .
+    forall 
+        (C : (Ext.wk (TM G L i)) (Ext.wk (BOOL G L i)) -> Ext.wk (TP G L i))
+        (b : (Ext.wk (TM G L i)) (Ext.wk (BOOL G L i)))
+        (c0 : (Ext.wk (TM G L i)) (C (Ext.wk (TT G L i))))
+        (c1 : (Ext.wk (TM G L i)) (C (Ext.wk (FF G L i)))) .
+    (Ext.wk (TM G L i)) (C b)
+/;
+unfold /IF_TERM/.
+inference.
+introOf /M G L i C b c0 c1/.
+reduce //.
+
+assert /forall (x : forall (z : SynM) . tp (L z)) . isClosedModalM M (TP_Sem L i x)/ /HtTP_Sem/.
+{ apply /TP_Sem_isClosedModal/. }
+
+assert /forall (x : forall (z1 : SynM) . tm boolean) . isClosedModalM M (BOOL_Sem L x)/ /HtBOOL_Sem/.
+{ apply /BOOL_Sem_isClosedModal/. }
+
+unfold /BOOL in b/.
+unfold /TM in b/.
+unfold /Ext.wk in b at all/.
+
+assert /Glue.t (G (fn z1 . tm boolean) (BOOL_Sem L)) : TP_Sem L i (fn z1 . boolean)/ /GlueTy/.
+{
+    unfold /TP_Sem/.
+    apply /Ext.intro/.
+    intro /z _/.
+    so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+}
+
+assert /Glue.pi_closed
+  (Glue.glue
+     (G (fn z . tp (L z)) (TP_Sem L i))
+     (fn z . boolean)
+     (Glue.t (G (fn z . tm boolean) (BOOL_Sem L))))
+  = Ext.wk (TM G L i) (Ext.wk (BOOL G L i))
+  : U i/ /TyEq/.
+{
+    unfold /TM, BOOL, Ext.wk at all/.
+    inferRaw /Glue.pi_closed
+  (Glue.glue
+     (G (fn z . tp (L z)) (TP_Sem L i))
+     (fn z . boolean)
+     (Glue.t (G (fn z . tm boolean) (BOOL_Sem L))))/ /HtGluePiClosed/.
+    5:{
+        inference.
+        typecheck1.
+        4:{
+            inference.  
+            typecheck.
+        }
+        typecheck_goals [4, 3, 2, 1, 0];
+        unfold /TP_Sem/.
+        apply /Ext.intro/.
+        intro /z _/.
+        so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+    }
+    typecheck_goals [4, 3, 2, 1, 0];
+    subsume /TP_Sem
+                       L
+                       i
+                       (Glue.pi_open
+                          (Glue.glue
+                             (G (fn z . tp (L z)) (TP_Sem L i))
+                             (fn z . boolean)
+                             (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))))/.
+    {
+        unfold /TP_Sem/.
+        
+        assert /Glue.pi_open
+     (Glue.glue
+        (G (fn z1 . tp (L z1)) (TP_Sem L i))
+        (fn z1 . boolean)
+        (Glue.t (G (fn z1 . tm boolean) (BOOL_Sem L)))) = (fn z . boolean) : (forall (z : `SynM M) . tp (L z))/ /piOpenEq/.
+        {
+            soRaw /`Glue.beta1 (G (fn z . tp (L z)) (TP_Sem L i)) (fn z . boolean) (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ /bTybeta/.
+            5:{
+                inference.
+                typecheck. 
+            }
+            typecheck_goals [5, 4, 3, 2, 1];
+            1:{
+                auto. 
+            }
+            auto. 
+        }
+
+        applyRaw /Ext.subtype/.
+        5:{
+            inference.
+            typecheck1.
+            typecheck_goals [2, 1, 0];
+            introOf /z/.
+            reduce //.
+            rewrite /-> piOpenEq/.
+            reduce //.
+            typecheck. 
+        }
+        typecheck_goals [3, 2, 1, 0];
+        reduce //.
+        introOf /z/.
+        reduce //.
+        rewrite /-> piOpenEq/.
+        reduce //.
+        typecheck. 
+    }
+    auto. 
+}
+
+assert /b : (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ /bTy/.
+{
+    eqtp /Glue.pi_closed
+      (Glue.glue
+         (G (fn z . tp (L z)) (TP_Sem L i))
+         (fn z . boolean)
+         (Glue.t (G (fn z . tm boolean) (BOOL_Sem L))))/ >> auto. 
+
+    soRaw /`Glue.beta2 (G (fn z . tp (L z)) (TP_Sem L i)) (fn z . boolean) (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ /bTybeta/.
+    5:{
+        inference.
+        typecheck. 
+    }
+    6:{
+        unfold /TP_Sem/.
+        reduce //.
+        apply /Ext.intro/.
+        intro /z _/. 
+        reduce //.
+        so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+    }
+    typecheck_goals [5, 4, 3, 2, 1];
+    assert /(Glue.pi_closed
+        (Glue.glue
+           (G (fn z . tp (L z)) (TP_Sem L i))
+           (fn z . boolean)
+           (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))))
+        = (Glue.t (G (fn z . tm boolean) (BOOL_Sem L))) : U i/ /subsumeUi/ >> auto.
+    subsume /TP_Sem L i (fn z . boolean)/ >> auto. 
+    unfold /TP_Sem/.
+    apply /Ext.subtype/.
+}
+
+infer /Glue.pi_closed b/ /HtGluePiClosed/.
+unfold /BOOL_Sem in HtGluePiClosed/.
+unfold /BOOL_PreSem in HtGluePiClosed/.
+inference.
+
+assert /forall (z : `SynM M) . Glue.pi_closed
+  (Glue.glue
+     (G (fn z1 . tp (L z1)) (TP_Sem L i))
+     (fn z1 . boolean)
+     (Glue.t (G (fn z1 . `tm (L z1) (`boolean (L z1))) (BOOL_Sem L))))
+  = `tm (L z) (`boolean (L z))
+  : U i/ /bTySyn/.
+{
+    inference.
+    intro /z/.
+    transitivity /Ext.wk (TM G L i) (Ext.wk (BOOL G L i))/ >> auto.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+assert /forall (z : `SynM M) . `tm (L z) (`boolean (L z)) = Ext.wk (TM G L i) (Ext.wk (BOOL G L i)) : U i/ /tmboolsyn/.
+{
+    intro /z/.
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+assert /forall (z : `SynM M) . tp (L z) = Ext.wk (TP G L i) : U (1 + i)/ /tptpsyn/.
+{
+    intro /z/.
+    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+assert /`Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+  = (fn (z : `SynM M) . `tt (L z))
+  : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+% `Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+    = (fn (z : `SynM M) . `ff (L z))
+    : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+  : U i/ /bPiOpen/.
+{
+    inference.
+    typecheck.
+}
+
+typecheck1.
+2:{
+    auto.
+}
+3:{
+    typecheck. 
+}
+3:{
+   introOf /z/.
+   reduce //.
+
+   assert /b : tm boolean/ /btysyn/.
+   {
+        eqtp /Glue.t (G (fn z . tm boolean) (BOOL_Sem L))/ >> auto.
+        so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+   }
+   assert /C : `tm (L z) (`boolean (L z)) -> tp (L z)/ /Ctysyn/.
+   {
+        eqtp /Ext.wk (TM G L i) (Ext.wk (BOOL G L i)) -> Ext.wk (TP G L i)/ >> auto.
+   }
+   assert /c0 : `tm (L z) (C (`tt (L z)))/ /c0tysyn/.
+    {
+        inference.
+        eqtp /Ext.wk (TM G L i) (C (Ext.wk (TT G L i)))/ >> auto.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    assert /c1 : `tm (L z) (C (`ff (L z)))/ /c1tysyn/.
+    {
+        inference.
+        eqtp /Ext.wk (TM G L i) (C (Ext.wk (FF G L i)))/ >> auto.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    rewriteRaw /-> Ext.syn_eq _ (TM G L i) z/.
+    7:{
+        inference.
+        typecheck. 
+    }
+    6:{
+        inference.
+        typecheck. 
+    }
+    typecheck_goals [6, 5, 4, 3, 2, 1];
+    {
+        unfold /Ext.wk at all/.
+        assert /v0 = tm : (tp (L z) -> U i)/ /v0isTm/.
+        {
+            inference.
+            so /Ext.syn_eq _ v0 z/ /v0eq/.
+            unfold /Ext.pt in v0eq/.
+            transitivity /fn A . tm A/. 
+            {
+                subsume /Ext.t (TM_Ext G L i)/ >> auto.
+                {
+                    apply /Ext.subtype/.
+                }
+            }
+            symmetry.
+            RuleTactic.arrowEta >> auto.
+        }
+        typecheck. 
+        decompEq 1 /tp (L z) -> U i/.
+        {
+            symmetry.
+            auto. 
+        }
+        reflexivity.
+    }
+    unfold /Ext.pt at all, Ext.wk at all/.
+    typecheck.
+}
+2:{
+    introOf /b'/.
+    reduce //.
+    typecheck. 
+}
+3:{
+    intro /z a/.
+    unfold /eqtp_eq/.
+    reduce //.
+
+    assert /b : tm boolean/ /btysyn/.
+   {
+        eqtp /Glue.t (G (fn z . tm boolean) (BOOL_Sem L))/ >> auto.
+        so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+   }
+   assert /C : `tm (L z) (`boolean (L z)) -> tp (L z)/ /Ctysyn/.
+   {
+        eqtp /Ext.wk (TM G L i) (Ext.wk (BOOL G L i)) -> Ext.wk (TP G L i)/ >> auto.
+   }
+   assert /c0 : `tm (L z) (C (`tt (L z)))/ /c0tysyn/.
+    {
+        inference.
+        eqtp /Ext.wk (TM G L i) (C (Ext.wk (TT G L i)))/ >> auto.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    assert /c1 : `tm (L z) (C (`ff (L z)))/ /c1tysyn/.
+    {
+        inference.
+        eqtp /Ext.wk (TM G L i) (C (Ext.wk (FF G L i)))/ >> auto.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+
+    assert /Glue.pi_open b z = b : tm boolean/ /bPiOpen2/.
+    {
+        inference.
+        so /Glue.syn_eq _ z b/ /beq/.
+        auto.
+    }
+
+    destruct /a/ /left | right/.
+    {
+        reduce //.
+        assert /b = `tt (L z) : tm boolean/ /bIsTT/.
+        {
+            transitivity /Glue.pi_open b z/ >> auto.
+            transitivity /(fn (z : `SynM M) . `tt (L z)) z/.
+            {
+                val term = case parseCurr /fn z . `tm (L z) (`boolean (L z))/ of 
+                    | Term.Lam (_, term) => term
+                    | _ => parseCurr /()/;
+
+                RuleTactic.forallElimEq 
+                    (parseCurr /`SynM M/)
+                    (term)
+                    (parseCurr /Glue.pi_open b/)
+                    (parseCurr /fn (z : `SynM M) . `tt (L z)/)
+                    (parseCurr /_/)
+                    (parseCurr /_/) >> auto.
+            }
+            reduce //.
+            reflexivity.
+        }
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        {
+            unfold /Ext.wk at all/.
+            assert /v0 = tm : (tp (L z) -> U i)/ /v0isTm/.
+            {
+                inference.
+                so /Ext.syn_eq _ v0 z/ /v0eq/.
+                unfold /Ext.pt in v0eq/.
+                transitivity /fn A . tm A/. 
+                {
+                    subsume /Ext.t (TM_Ext G L i)/ >> auto.
+                    {
+                        apply /Ext.subtype/.
+                    }
+                }
+                symmetry.
+                RuleTactic.arrowEta >> auto.
+            }
+            typecheck. 
+            decompEq 1 /tp (L z) -> U i/.
+            {
+                symmetry.
+                auto. 
+            }
+            reflexivity.
+        }
+        {
+            apply /Ext.eqUnderSyn _ _ _ z/.
+        }
+        {
+            eqtp /tp (L z)/ >> auto.
+            rewrite /-> Ext.syn_eq _ (TT G L i) z/. 
+            unfold /Ext.pt at all, Ext.wk at all/.
+            compat. 
+            eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+        }
+        {
+            unfold /Ext.pt at all, Ext.wk at all/.
+            transitivity /`bool_ind (L z) C tt c0 c1/ >> auto.
+            eqtp /tm (C tt)/ >> auto.
+            {
+                compat. 
+                compat. 
+                eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+            }
+            apply /bool_ind_tt (L z) C c0 c1/.
+        }
+    }
+    {
+        reduce //.
+        assert /b = `ff (L z) : tm boolean/ /bIsFF/.
+        {
+            transitivity /Glue.pi_open b z/ >> auto.
+            transitivity /(fn (z : `SynM M) . `ff (L z)) z/.
+            {
+                val term = case parseCurr /fn z . `tm (L z) (`boolean (L z))/ of 
+                    | Term.Lam (_, term) => term
+                    | _ => parseCurr /()/;
+
+                RuleTactic.forallElimEq 
+                    (parseCurr /`SynM M/)
+                    (term)
+                    (parseCurr /Glue.pi_open b/)
+                    (parseCurr /fn (z : `SynM M) . `ff (L z)/)
+                    (parseCurr /_/)
+                    (parseCurr /_/) >> auto.
+            }
+            reduce //.
+            reflexivity.
+        }
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        {
+            unfold /Ext.wk at all/.
+            assert /v0 = tm : (tp (L z) -> U i)/ /v0isTm/.
+            {
+                inference.
+                so /Ext.syn_eq _ v0 z/ /v0eq/.
+                unfold /Ext.pt in v0eq/.
+                transitivity /fn A . tm A/. 
+                {
+                    subsume /Ext.t (TM_Ext G L i)/ >> auto.
+                    {
+                        apply /Ext.subtype/.
+                    }
+                }
+                symmetry.
+                RuleTactic.arrowEta >> auto.
+            }
+            typecheck. 
+            decompEq 1 /tp (L z) -> U i/.
+            {
+                symmetry.
+                auto. 
+            }
+            reflexivity.
+        }
+        {
+            apply /Ext.eqUnderSyn _ _ _ z/.
+        }
+        {
+            eqtp /tp (L z)/ >> auto.
+            rewrite /-> Ext.syn_eq _ (FF G L i) z/. 
+            unfold /Ext.pt at all, Ext.wk at all/.
+            compat. 
+            eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+        }
+        {
+            unfold /Ext.pt at all, Ext.wk at all/.
+            transitivity /`bool_ind (L z) C ff c0 c1/ >> auto.
+            eqtp /tm (C ff)/ >> auto.
+            {
+                compat. 
+                compat. 
+                eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+            }
+            apply /bool_ind_ff (L z) C c0 c1/.
+        }
+    }
+}
+typecheck_goals [1, 0];
+introOf /a p/.
+reduce //.
+
+assert /(Glue.t (G (fn z . tm boolean) (BOOL_Sem L))) = Ext.wk (TM G L i) (Ext.wk (BOOL G L i))
+  : U i/ /TMBOOLEq/.
+{
+    transitivity /Glue.pi_closed
+                (Glue.glue
+                 (G (fn z . tp (L z)) (TP_Sem L i))
+                 (fn z . boolean)
+                 (Glue.t (G (fn z . tm boolean) (BOOL_Sem L))))/ >> auto.
+    symmetry.
+    so /`Glue.beta2 (G (fn z . tp (L z)) (TP_Sem L i)) (fn z . boolean) (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ /bTybeta/.
+    subsume /TP_Sem L i (fn z . boolean)/ >> auto.
+    unfold /TP_Sem/.
+    apply /Ext.subtype/.
+}
+
+destruct /a/ /left | right/.
+{
+    reduce //.
+    typecheck. 
+    compat. 
+    unfold /TT/.
+    unfold /Ext.wk at 2/.
+    assert /Glue.pi_closed b = TT_Sem : _/ /bIsTTSem/.
+    {
+        inference.
+        unfold /TT_Sem/.
+        assert /left = () : _/ /leftEq/.
+        {
+            inference. 
+            RuleTactic.eqExt >> auto.
+        }
+        rewrite /-> leftEq in p/.
+        unfold /BOOL_PreSem/.
+        inference. 
+        transitivity /`EtaM
+          M
+          (`Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+             = (fn (z : `SynM M) . `tt (L z))
+             : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+           % `Glue.pi_open
+               (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L))
+               b
+               = (fn (z : `SynM M) . `ff (L z))
+               : (forall (z : `SynM M) . `tm (L z) (`boolean (L z))))
+          (inl ())/ >> auto.
+    }
+    eqtp /(Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ >> auto.
+    transitivity /Glue.glue ((G (fn z . tm boolean) (BOOL_Sem L))) (Glue.pi_open b) (Glue.pi_closed b)/.
+    {
+        compat. 
+        {
+            symmetry.
+            auto. 
+        }
+        {
+            symmetry.
+            unfold /BOOL_Sem/.
+            unfold /BOOL_PreSem/.
+            eqtp /ClosedM
+                 (Glue.pi_open b
+                    = (fn (z : SynM) . tt)
+                    : (forall (z : SynM) . tm boolean)
+                  % Glue.pi_open b
+                      = (fn (z : SynM) . ff)
+                      : (forall (z : SynM) . tm boolean))/ >> auto.
+        }
+    }
+    apply /Glue.eta (G (fn z . tm boolean) (BOOL_Sem L)) b/.
+}
+{
+    reduce //.
+    typecheck. 
+    compat. 
+    unfold /FF/.
+    unfold /Ext.wk at 2/.
+    assert /Glue.pi_closed b = FF_Sem : _/ /bIsFFSem/.
+    {
+        inference.
+        unfold /FF_Sem/.
+        assert /right = () : _/ /rightEq/.
+        {
+            inference. 
+            RuleTactic.eqExt >> auto.
+        }
+        rewrite /-> rightEq in p/.
+        unfold /BOOL_PreSem/.
+        inference. 
+        transitivity /`EtaM
+          M
+          (`Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+             = (fn (z : `SynM M) . `tt (L z))
+             : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+           % `Glue.pi_open
+               (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L))
+               b
+               = (fn (z : `SynM M) . `ff (L z))
+               : (forall (z : `SynM M) . `tm (L z) (`boolean (L z))))
+          (inr ())/ >> auto.
+    }
+    eqtp /(Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ >> auto.
+    transitivity /Glue.glue ((G (fn z . tm boolean) (BOOL_Sem L))) (Glue.pi_open b) (Glue.pi_closed b)/.
+    {
+        compat. 
+        {
+            symmetry.
+            auto. 
+        }
+        {
+            symmetry.
+            unfold /BOOL_Sem/.
+            unfold /BOOL_PreSem/.
+            eqtp /ClosedM
+                 (Glue.pi_open b
+                    = (fn (z : SynM) . tt)
+                    : (forall (z : SynM) . tm boolean)
+                  % Glue.pi_open b
+                      = (fn (z : SynM) . ff)
+                      : (forall (z : SynM) . tm boolean))/ >> auto.
+        }
+    }
+    apply /Glue.eta (G (fn z . tm boolean) (BOOL_Sem L)) b/.
+}
+qed ();
+
+lemma "IF_Syn"
+/
+    forall
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) .
+    forall 
+        (C : (Ext.wk (TM G L i)) (Ext.wk (BOOL G L i)) -> Ext.wk (TP G L i))
+        (b : (Ext.wk (TM G L i)) (Ext.wk (BOOL G L i)))
+        (c0 : (Ext.wk (TM G L i)) (C (Ext.wk (TT G L i))))
+        (c1 : (Ext.wk (TM G L i)) (C (Ext.wk (FF G L i)))) .
+    forall (z : `SynM M) .
+    `IF_TERM M G L i C b c0 c1 = `bool_ind (L z) C b c0 c1 : _
+/;
+inference.
+unfold /IF_TERM/.
+intro /M G L i C b c0 c1 z'/.
+
+assert /forall (x : forall (z : SynM) . tp (L z)) . isClosedModalM M (TP_Sem L i x)/ /HtTP_Sem/.
+{ apply /TP_Sem_isClosedModal/. }
+
+assert /forall (x : forall (z1 : SynM) . tm boolean) . isClosedModalM M (BOOL_Sem L x)/ /HtBOOL_Sem/.
+{ apply /BOOL_Sem_isClosedModal/. }
+
+unfold /BOOL in b/.
+unfold /TM in b/.
+unfold /Ext.wk in b at all/.
+
+assert /Glue.t (G (fn z1 . tm boolean) (BOOL_Sem L)) : TP_Sem L i (fn z1 . boolean)/ /GlueTy/.
+{
+    unfold /TP_Sem/.
+    apply /Ext.intro/.
+    intro /z _/.
+    so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+}
+
+assert /Glue.pi_closed
+         (Glue.glue
+            (G (fn z1 . tp (L z1)) (TP_Sem L i))
+            (fn z1 . boolean)
+            (Glue.t (G (fn z1 . tm boolean) (BOOL_Sem L))))
+         = Ext.wk (TM G L i) (Ext.wk (BOOL G L i))
+         : U i/ /TyEq/.
+{
+    unfold /TM, BOOL, Ext.wk at all/.
+    inferRaw /Glue.pi_closed
+  (Glue.glue
+     (G (fn z . tp (L z)) (TP_Sem L i))
+     (fn z . boolean)
+     (Glue.t (G (fn z . tm boolean) (BOOL_Sem L))))/ /HtGluePiClosed/.
+    5:{
+        inference.
+        typecheck1.
+        4:{
+            inference.  
+            typecheck.
+        }
+        typecheck_goals [4, 3, 2, 1, 0];
+        unfold /TP_Sem/.
+        apply /Ext.intro/.
+        intro /z _/.
+        so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+    }
+    typecheck_goals [4, 3, 2, 1, 0];
+    subsume /TP_Sem
+                       L
+                       i
+                       (Glue.pi_open
+                          (Glue.glue
+                             (G (fn z . tp (L z)) (TP_Sem L i))
+                             (fn z . boolean)
+                             (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))))/.
+    {
+        unfold /TP_Sem/.
+        
+        assert /Glue.pi_open
+     (Glue.glue
+        (G (fn z1 . tp (L z1)) (TP_Sem L i))
+        (fn z1 . boolean)
+        (Glue.t (G (fn z1 . tm boolean) (BOOL_Sem L)))) = (fn z . boolean) : (forall (z : `SynM M) . tp (L z))/ /piOpenEq/.
+        {
+            soRaw /`Glue.beta1 (G (fn z . tp (L z)) (TP_Sem L i)) (fn z . boolean) (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ /bTybeta/.
+            5:{
+                inference.
+                typecheck. 
+            }
+            typecheck_goals [5, 4, 3, 2, 1];
+            1:{
+                auto. 
+            }
+            auto. 
+        }
+
+        applyRaw /Ext.subtype/.
+        5:{
+            inference.
+            typecheck1.
+            typecheck_goals [2, 1, 0];
+            introOf /z/.
+            reduce //.
+            rewrite /-> piOpenEq/.
+            reduce //.
+            typecheck. 
+        }
+        typecheck_goals [3, 2, 1, 0];
+        reduce //.
+        introOf /z/.
+        reduce //.
+        rewrite /-> piOpenEq/.
+        reduce //.
+        typecheck. 
+    }
+    auto. 
+}
+
+assert /b : (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ /bTy/.
+{
+    eqtp /Glue.pi_closed
+      (Glue.glue
+         (G (fn z . tp (L z)) (TP_Sem L i))
+         (fn z . boolean)
+         (Glue.t (G (fn z . tm boolean) (BOOL_Sem L))))/ >> auto. 
+
+    soRaw /`Glue.beta2 (G (fn z . tp (L z)) (TP_Sem L i)) (fn z . boolean) (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ /bTybeta/.
+    5:{
+        inference.
+        typecheck. 
+    }
+    6:{
+        unfold /TP_Sem/.
+        reduce //.
+        apply /Ext.intro/.
+        intro /z _/. 
+        reduce //.
+        so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+    }
+    typecheck_goals [5, 4, 3, 2, 1];
+    assert /(Glue.pi_closed
+        (Glue.glue
+           (G (fn z . tp (L z)) (TP_Sem L i))
+           (fn z . boolean)
+           (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))))
+        = (Glue.t (G (fn z . tm boolean) (BOOL_Sem L))) : U i/ /subsumeUi/ >> auto.
+    subsume /TP_Sem L i (fn z . boolean)/ >> auto. 
+    unfold /TP_Sem/.
+    apply /Ext.subtype/.
+}
+
+assert /forall (z : `SynM M) . `tm (L z) (`boolean (L z)) = Ext.wk (TM G L i) (Ext.wk (BOOL G L i)) : U i/ /tmboolsyn/.
+{
+    intro /z/.
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+assert /forall (z : `SynM M) . tp (L z) = Ext.wk (TP G L i) : U (1 + i)/ /tptpsyn/.
+{
+    intro /z/.
+    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+assert /Glue.pi_closed
+  (Glue.glue
+     (G (fn z1 . tp (L z1)) (TP_Sem L i))
+     (fn z1 . boolean)
+     (Glue.t (G (fn z1 . `tm (L z1) (`boolean (L z1))) (BOOL_Sem L))))
+  = `tm (L z') (`boolean (L z')) : U i/ /bTySyn/.
+{
+    inference.
+    transitivity /Ext.wk (TM G L i) (Ext.wk (BOOL G L i))/ >> auto.
+}
+
+assert /`tm (L z') (C b) = Ext.wk (TM G L i) (C b) : U i/ /Cty/.
+{
+    inference.
+    rewrite /-> Ext.syn_eq _ (TM G L i) z'/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+infer /Glue.pi_closed b/ /HtGluePiClosed/.
+unfold /BOOL_Sem in HtGluePiClosed/.
+unfold /BOOL_PreSem in HtGluePiClosed/.
+assert /Glue.pi_closed b = `StarM M _ z' : _/ /bIsStarM/.
+{
+    inference.
+    apply /closed_eq/ >> auto. 
+}
+
+assert /(Glue.t (G (fn z . tm boolean) (BOOL_Sem L))) = Ext.wk (TM G L i) (Ext.wk (BOOL G L i))
+  : U i/ /TMBOOLEq/.
+{
+    transitivity /Glue.pi_closed
+                (Glue.glue
+                 (G (fn z . tp (L z)) (TP_Sem L i))
+                 (fn z . boolean)
+                 (Glue.t (G (fn z . tm boolean) (BOOL_Sem L))))/ >> auto.
+    symmetry.
+    so /`Glue.beta2 (G (fn z . tp (L z)) (TP_Sem L i)) (fn z . boolean) (Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ /bTybeta/.
+    subsume /TP_Sem L i (fn z . boolean)/ >> auto.
+    unfold /TP_Sem/.
+    apply /Ext.subtype/.
+}
+
+assert /forall (v0 : `ClosedM M
+        (`Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+          = (fn (z : `SynM M) . `tt (L z))
+          : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+        % `Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+            = (fn (z : `SynM M) . `ff (L z))
+            : (forall (z : `SynM M) . `tm (L z) (`boolean (L z))))) . 
+        `TryM'
+          M
+          (`Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+             = (fn (z : `SynM M) . `tt (L z))
+             : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+           % `Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+               = (fn (z : `SynM M) . `ff (L z))
+               : (forall (z : `SynM M) . `tm (L z) (`boolean (L z))))
+          (fn v1 . `Ext.wk (`TM_Ext M G L i) (`TM M G L i) (C b))
+          v0
+          (fn z p . `bool_ind (L z) C b c0 c1)
+          (fn lr p . (case lr of | inl v1 . c0 | inr v1 . c1))
+          : `Ext.wk (`TM_Ext M G L i) (`TM M G L i) (C b)
+/ /TryTermTy/.
+{
+    intro /v0/.
+    typecheck1. 
+    2:{
+        assert /Glue.pi_open b = (fn (z : SynM) . tt) : (forall (z : SynM) . tm boolean)
+            % Glue.pi_open b = (fn (z : SynM) . ff) : (forall (z : SynM) . tm boolean) : U i/ /bPiOpen/.
+        {
+            typecheck.
+        }
+        auto.
+    }
+    3:{
+        typecheck. 
+    }
+    3:{
+        typecheck1.
+        1:{
+            introOf /p/.
+            reduce //.
+            eqtp /`tm (L z) (C b)/.
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            assert /b : tm boolean/ /btysyn/.
+            {
+                 eqtp /Glue.t (G (fn z . tm boolean) (BOOL_Sem L))/ >> auto.
+                 so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+            }
+            assert /C : `tm (L z) (`boolean (L z)) -> tp (L z)/ /Ctysyn/.
+            {
+                 eqtp /Ext.wk (TM G L i) (Ext.wk (BOOL G L i)) -> Ext.wk (TP G L i)/ >> auto.
+            }
+            assert /c0 : `tm (L z) (C (`tt (L z)))/ /c0tysyn/.
+            {
+                inference.
+                eqtp /Ext.wk (TM G L i) (C (Ext.wk (TT G L i)))/ >> auto.
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            assert /c1 : `tm (L z) (C (`ff (L z)))/ /c1tysyn/.
+            {
+                inference.
+                eqtp /Ext.wk (TM G L i) (C (Ext.wk (FF G L i)))/ >> auto.
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            typecheck. 
+        }
+        typecheck. 
+    }
+    typecheck_goals [2, 1, 0];
+    {
+        introOf /lr p/.
+        reduce //.
+        typecheck. 
+        {
+            compat. 
+            unfold /TT/.
+            unfold /Ext.wk at 2/.
+            assert /Glue.pi_closed b = TT_Sem : _/ /bIsTTSem/.
+            {
+                inference.
+                unfold /TT_Sem/.
+                apply /closed_eq/ >> auto. 
+                {
+                    unfold /BOOL_PreSem/.
+                    typecheck. 
+                    {
+                        auto. 
+                    }
+                    {
+                        auto.
+                    }
+                }
+                {
+                    typecheck. 
+                }
+                {
+                    typecheck.
+                }
+                {
+                    unfold /BOOL_PreSem/.
+                    typecheck.
+                }
+            }
+            eqtp /(Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ >> auto.
+            transitivity /Glue.glue ((G (fn z . tm boolean) (BOOL_Sem L))) (Glue.pi_open b) (Glue.pi_closed b)/.
+            {
+                compat. 
+                {
+                    symmetry.
+                    auto. 
+                }
+                {
+                    symmetry.
+                    unfold /BOOL_Sem/.
+                    unfold /BOOL_PreSem/.
+                    eqtp /ClosedM
+                         (Glue.pi_open b
+                            = (fn (z : SynM) . tt)
+                            : (forall (z : SynM) . tm boolean)
+                          % Glue.pi_open b
+                              = (fn (z : SynM) . ff)
+                              : (forall (z : SynM) . tm boolean))/ >> auto.
+                }
+            }
+            apply /Glue.eta (G (fn z . tm boolean) (BOOL_Sem L)) b/.
+        }
+        {
+            compat. 
+            unfold /FF/.
+            unfold /Ext.wk at 2/.
+            assert /Glue.pi_closed b = FF_Sem : _/ /bIsTTSem/.
+            {
+                inference.
+                unfold /FF_Sem/.
+                apply /closed_eq/ >> auto. 
+                {
+                    unfold /BOOL_PreSem/.
+                    typecheck. 
+                    {
+                        auto. 
+                    }
+                    {
+                        auto.
+                    }
+                }
+                {
+                    typecheck. 
+                }
+                {
+                    typecheck.
+                }
+                {
+                    unfold /BOOL_PreSem/.
+                    typecheck.
+                }
+            }
+            eqtp /(Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ >> auto.
+            transitivity /Glue.glue ((G (fn z . tm boolean) (BOOL_Sem L))) (Glue.pi_open b) (Glue.pi_closed b)/.
+            {
+                compat. 
+                {
+                    symmetry.
+                    auto. 
+                }
+                {
+                    symmetry.
+                    unfold /BOOL_Sem/.
+                    unfold /BOOL_PreSem/.
+                    eqtp /ClosedM
+                         (Glue.pi_open b
+                            = (fn (z : SynM) . tt)
+                            : (forall (z : SynM) . tm boolean)
+                          % Glue.pi_open b
+                              = (fn (z : SynM) . ff)
+                              : (forall (z : SynM) . tm boolean))/ >> auto.
+                }
+            }
+            apply /Glue.eta (G (fn z . tm boolean) (BOOL_Sem L)) b/.
+        }
+    }
+    {
+        intro /z a/.
+        unfold /eqtp_eq/.
+        reduce //.
+        eqtp /`tm (L z) (C b)/.
+        {
+            rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            reflexivity.
+        }
+        destruct /a/ /left | right/.
+        {
+            reduce //.
+            assert /b = `tt (L z) : tm boolean/ /bIsTT/.
+            {
+                transitivity /Glue.pi_open b z/ >> auto.
+                {
+                    symmetry.
+                    so /Glue.syn_eq (G (fn z . tm boolean) (BOOL_Sem L)) z b/ /beq/.
+                    auto.
+                }
+                transitivity /(fn (z : `SynM M) . `tt (L z)) z/.
+                {
+                    val term = case parseCurr /fn z . `tm (L z) (`boolean (L z))/ of 
+                    | Term.Lam (_, term) => term
+                    | _ => parseCurr /()/;
+                    RuleTactic.forallElimEq 
+                        (parseCurr /`SynM M/)
+                        (term)
+                        (parseCurr /Glue.pi_open b/)
+                        (parseCurr /fn (z : `SynM M) . `tt (L z)/)
+                        (parseCurr /_/)
+                        (parseCurr /_/) >> auto.
+                }
+                reduce //.
+                reflexivity.
+            }
+            eqtp /`tm (L z) (C tt)/ >> auto.
+            {
+                compat. 
+                compat. 
+                eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+            }
+            transitivity /`bool_ind (L z) C tt c0 c1/.
+            {
+                compat. 
+                {
+                    compat. 
+                    eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+                }
+                {
+                    auto. 
+                }
+                {
+                    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                    rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+                    unfold /Ext.pt at all, Ext.wk at all/.
+                    reflexivity.
+                }
+                {
+                    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                    rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+                    unfold /Ext.pt at all, Ext.wk at all/.
+                    reflexivity.
+                }
+            }
+            apply /bool_ind_tt (L z) C c0 c1/.
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+        }
+        {
+            reduce //.
+            assert /b = `ff (L z) : tm boolean/ /bIsFF/.
+            {
+                transitivity /Glue.pi_open b z/ >> auto.
+                {
+                    symmetry.
+                    so /Glue.syn_eq (G (fn z . tm boolean) (BOOL_Sem L)) z b/ /beq/.
+                    auto.
+                }
+                transitivity /(fn (z : `SynM M) . `ff (L z)) z/.
+                {
+                    val term = case parseCurr /fn z . `tm (L z) (`boolean (L z))/ of 
+                    | Term.Lam (_, term) => term
+                    | _ => parseCurr /()/;
+
+                    RuleTactic.forallElimEq 
+                        (parseCurr /`SynM M/)
+                        (term)
+                        (parseCurr /Glue.pi_open b/)
+                        (parseCurr /fn (z : `SynM M) . `ff (L z)/)
+                        (parseCurr /_/)
+                        (parseCurr /_/) >> auto.
+                }
+                reduce //.
+                reflexivity.
+            }
+            eqtp /`tm (L z) (C ff)/ >> auto.
+            {
+                compat. 
+                compat. 
+                eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+            }
+            transitivity /`bool_ind (L z) C ff c0 c1/.
+            {
+                compat. 
+                {
+                    compat. 
+                    eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+                }
+                {
+                    auto. 
+                }
+                {
+                    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                    rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+                    unfold /Ext.pt at all, Ext.wk at all/.
+                    reflexivity.
+                }
+                {
+                    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                    rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+                    unfold /Ext.pt at all, Ext.wk at all/.
+                    reflexivity.
+                }
+            }
+            apply /bool_ind_ff (L z) C c0 c1/.
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+        }
+    }
+}
+
+
+transitivity /`TryM'
+  M 
+  ((`Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+     = (fn (z : `SynM M) . `tt (L z))
+     : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+   % `Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+       = (fn (z : `SynM M) . `ff (L z))
+       : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))))
+   _
+  (StarM z')
+  (fn z p . `bool_ind (L z) C b c0 c1)
+  (fn lr p . (case lr of | inl v0 . c0 | inr v0 . c1))/.
+{
+    inference. 
+    rewriteRaw /-> bIsStarM/.
+    1:{
+        reflexivityRaw.
+        apply /TryTermTy (StarM z')/. 
+    }
+    {
+        typecheck1. 
+        {
+            apply /TryTermTy v0/.
+        }
+        {
+            apply /TryTermTy (StarM z')/.
+        }
+    }
+}
+unfold /TryM'/.
+reduce //.
+soRaw /`TryM_beta2 M (
+    (`Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+     = (fn (z : `SynM M) . `tt (L z))
+     : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+   % `Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+       = (fn (z : `SynM M) . `ff (L z))
+       : (forall (z : `SynM M) . `tm (L z) (`boolean (L z))))
+) 
+  (fn a' .
+    `StarM
+      M
+      (`Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+         = (fn (z : `SynM M) . `tt (L z))
+         : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+       % `Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+           = (fn (z : `SynM M) . `ff (L z))
+           : (forall (z : `SynM M) . `tm (L z) (`boolean (L z))))
+      z'
+      = a'
+      : `ClosedM
+          M
+          (`Glue.pi_open (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L)) b
+             = (fn (z : `SynM M) . `tt (L z))
+             : (forall (z : `SynM M) . `tm (L z) (`boolean (L z)))
+           % `Glue.pi_open
+               (G (fn z . `tm (L z) (`boolean (L z))) (`BOOL_Sem M L))
+               b
+               = (fn (z : `SynM M) . `ff (L z))
+               : (forall (z : `SynM M) . `tm (L z) (`boolean (L z))))
+    -> `Ext.wk (`TM_Ext M G L i) (`TM M G L i) (C b))
+    z' 
+      (fn z p . `bool_ind (L z) C b c0 c1)
+      (fn a' p . (case a' of | inl v0 . c0 | inr v0 . c1))
+/ /TryMBeta2/.
+3:{
+    assert /Glue.pi_open b = (fn (z : SynM) . tt) : (forall (z : SynM) . tm boolean)
+            % Glue.pi_open b = (fn (z : SynM) . ff) : (forall (z : SynM) . tm boolean) : U i/ /bPiOpen/.
+    {
+        typecheck.
+    }
+    auto. 
+}
+3:{
+    typecheck.
+}
+5:{
+    introOf /a' p/.
+    reduce //.
+    destruct /a'/ /left | right/. 
+    {
+        reduce //.
+        typecheck.
+        compat.
+        unfold /TT/.
+        unfold /Ext.wk at 2/.
+        assert /Glue.pi_closed b = TT_Sem : _/ /bIsTTSem/.
+        {
+            inference.
+            unfold /TT_Sem/.
+            apply /closed_eq/ >> auto. 
+            {
+                unfold /BOOL_PreSem/.
+                typecheck. 
+                {
+                    auto. 
+                }
+                {
+                    auto.
+                }
+            }
+            {
+                typecheck. 
+            }
+            {
+                typecheck.
+            }
+            {
+                unfold /BOOL_PreSem/.
+                typecheck.
+            }
+        }
+        eqtp /(Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ >> auto.
+        transitivity /Glue.glue ((G (fn z . tm boolean) (BOOL_Sem L))) (Glue.pi_open b) (Glue.pi_closed b)/.
+        {
+            compat. 
+            {
+                symmetry.
+                auto. 
+            }
+            {
+                symmetry.
+                unfold /BOOL_Sem/.
+                unfold /BOOL_PreSem/.
+                eqtp /ClosedM
+                     (Glue.pi_open b
+                        = (fn (z : SynM) . tt)
+                        : (forall (z : SynM) . tm boolean)
+                      % Glue.pi_open b
+                          = (fn (z : SynM) . ff)
+                          : (forall (z : SynM) . tm boolean))/ >> auto.
+            }
+        }
+        apply /Glue.eta (G (fn z . tm boolean) (BOOL_Sem L)) b/.
+    }
+    {
+        reduce //.
+        typecheck.
+        compat.
+        unfold /FF/.
+        unfold /Ext.wk at 2/.
+        assert /Glue.pi_closed b = FF_Sem : _/ /bIsTTSem/.
+        {
+            inference.
+            unfold /FF_Sem/.
+            apply /closed_eq/ >> auto. 
+            {
+                unfold /BOOL_PreSem/.
+                typecheck. 
+                {
+                    auto. 
+                }
+                {
+                    auto.
+                }
+            }
+            {
+                typecheck. 
+            }
+            {
+                typecheck.
+            }
+            {
+                unfold /BOOL_PreSem/.
+                typecheck.
+            }
+        }
+        eqtp /(Glue.t (G (fn z . tm boolean) (BOOL_Sem L)))/ >> auto.
+        transitivity /Glue.glue ((G (fn z . tm boolean) (BOOL_Sem L))) (Glue.pi_open b) (Glue.pi_closed b)/.
+        {
+            compat. 
+            {
+                symmetry.
+                auto. 
+            }
+            {
+                symmetry.
+                unfold /BOOL_Sem/.
+                unfold /BOOL_PreSem/.
+                eqtp /ClosedM
+                     (Glue.pi_open b
+                        = (fn (z : SynM) . tt)
+                        : (forall (z : SynM) . tm boolean)
+                      % Glue.pi_open b
+                          = (fn (z : SynM) . ff)
+                          : (forall (z : SynM) . tm boolean))/ >> auto.
+            }
+        }
+        apply /Glue.eta (G (fn z . tm boolean) (BOOL_Sem L)) b/.
+    }
+}
+4:{
+    introOf /z p/. 
+    reduce //.
+    eqtp /`tm (L z) (C b)/.
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    assert /b : tm boolean/ /btysyn/.
+    {
+         eqtp /Glue.t (G (fn z . tm boolean) (BOOL_Sem L))/ >> auto.
+         so /Glue.syn_eqty ap M ap i (G (fn z1 . tm boolean) (BOOL_Sem L)) z/ /lem/ >> auto.
+    }
+    assert /C : `tm (L z) (`boolean (L z)) -> tp (L z)/ /Ctysyn/.
+    {
+         eqtp /Ext.wk (TM G L i) (Ext.wk (BOOL G L i)) -> Ext.wk (TP G L i)/ >> auto.
+    }
+    assert /c0 : `tm (L z) (C (`tt (L z)))/ /c0tysyn/.
+    {
+        inference.
+        eqtp /Ext.wk (TM G L i) (C (Ext.wk (TT G L i)))/ >> auto.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    assert /c1 : `tm (L z) (C (`ff (L z)))/ /c1tysyn/.
+    {
+        inference.
+        eqtp /Ext.wk (TM G L i) (C (Ext.wk (FF G L i)))/ >> auto.
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    typecheck.
+}
+4:{
+    intro /z a/.
+    unfold /eqtp_eq/.
+    reduce //.
+    extensionality. 
+    reduce //.
+    eqtp /`tm (L z) (C b)/.
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    destruct /a/ /left | right/.
+    {
+        reduce //.
+        assert /b = `tt (L z) : tm boolean/ /bIsTT/.
+        {
+            transitivity /Glue.pi_open b z/ >> auto.
+            {
+                symmetry.
+                so /Glue.syn_eq (G (fn z . tm boolean) (BOOL_Sem L)) z b/ /beq/.
+                auto.
+            }
+            transitivity /(fn (z : `SynM M) . `tt (L z)) z/.
+            {
+                val term = case parseCurr /fn z . `tm (L z) (`boolean (L z))/ of 
+                    | Term.Lam (_, term) => term
+                    | _ => parseCurr /()/;
+                RuleTactic.forallElimEq 
+                    (parseCurr /`SynM M/)
+                    (term)
+                    (parseCurr /Glue.pi_open b/)
+                    (parseCurr /fn (z : `SynM M) . `tt (L z)/)
+                    (parseCurr /_/)
+                    (parseCurr /_/) >> auto.
+            }
+            reduce //.
+            reflexivity.
+        }
+        eqtp /`tm (L z) (C tt)/ >> auto.
+        {
+            compat. 
+            compat. 
+            eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+        }
+        transitivity /`bool_ind (L z) C tt c0 c1/.
+        {
+            compat. 
+            {
+                compat. 
+                eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+            }
+            {
+                auto. 
+            }
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+        }
+        apply /bool_ind_tt (L z) C c0 c1/.
+        {
+            rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+            rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            reflexivity.
+        }
+        {
+            rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+            rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            reflexivity.
+        }
+    }
+    {
+        reduce //.
+        assert /b = `ff (L z) : tm boolean/ /bIsFF/.
+        {
+            transitivity /Glue.pi_open b z/ >> auto.
+            {
+                symmetry.
+                so /Glue.syn_eq (G (fn z . tm boolean) (BOOL_Sem L)) z b/ /beq/.
+                auto.
+            }
+            transitivity /(fn (z : `SynM M) . `ff (L z)) z/.
+            {
+                val term = case parseCurr /fn z . `tm (L z) (`boolean (L z))/ of 
+                    | Term.Lam (_, term) => term
+                    | _ => parseCurr /()/;
+
+                RuleTactic.forallElimEq 
+                    (parseCurr /`SynM M/)
+                    (term)
+                    (parseCurr /Glue.pi_open b/)
+                    (parseCurr /fn (z : `SynM M) . `ff (L z)/)
+                    (parseCurr /_/)
+                    (parseCurr /_/) >> auto.
+            }
+            reduce //.
+            reflexivity.
+        }
+        eqtp /`tm (L z) (C ff)/ >> auto.
+        {
+            compat.
+            compat.
+            eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+        }
+        transitivity /`bool_ind (L z) C ff c0 c1/.
+        {
+            compat. 
+            {
+                compat. 
+                eqtp /`tm (L z) (`boolean (L z))/ >> auto.
+            }
+            {
+                auto. 
+            }
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+            {
+                rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+                rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+                unfold /Ext.pt at all, Ext.wk at all/.
+                reflexivity.
+            }
+        }
+        apply /bool_ind_ff (L z) C c0 c1/.
+        {
+            rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+            rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            reflexivity.
+        }
+        {
+            rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+            rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            reflexivity.
+        }
+    }
+}
+{
+    reduce /TryMBeta2/.
+    transitivity /(fn p . `bool_ind (L z') C b c0 c1) ()/.
+    {
+        decompEq 1 /(StarM z'
+                   = StarM z'
+                   : ClosedM
+                       (Glue.pi_open b
+                          = (fn (z : SynM) . tt)
+                          : (forall (z : SynM) . tm boolean)
+                        % Glue.pi_open b
+                            = (fn (z : SynM) . ff)
+                            : (forall (z : SynM) . tm boolean))
+                 -> Ext.wk (TM G L i) (C b))/ >> auto.
+    }
+    reduce //. 
+    reflexivity.
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z'/.
+        rewrite /-> Ext.syn_eq _ (TT G L i) z'/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z'/.
+        rewrite /-> Ext.syn_eq _ (FF G L i) z'/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+}
+typechecker ();
+qed ();
+
+
+define /IF_Ext {M} G L i/
+/
+    Ext.S ( (forall (C : (Ext.wk (TM G L i)) (Ext.wk (BOOL G L i)) -> Ext.wk (TP G L i)) . 
+             forall (b : (Ext.wk (TM G L i)) (Ext.wk (BOOL G L i))) .
+             (Ext.wk (TM G L i)) (C (Ext.wk (TT G L i))) -> 
+             (Ext.wk (TM G L i)) (C (Ext.wk (FF G L i))) -> 
+                (Ext.wk (TM G L i)) (C b) ) )
+          (fn z . `bool_ind (L z))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) .
+    `Ext.EXT M (lsucc i) (fn z . 
+        forall (C : `tm (L z) (`boolean (L z)) -> tp (L z)) 
+            (b : `tm (L z) (`boolean (L z))) .
+            `tm (L z) (C (`tt (L z))) -> 
+            `tm (L z) (C (`ff (L z))) -> 
+                `tm (L z) (C b)
+            ) _ _
+/;
+unfold /IF_Ext/.
+inference.
+introOf /M G L i/. reduce //.
+
+assert /forall (z : SynM) . Ext.wk (TP G L i) = tp (L z) : U (1 + i)/ /TPtp/.
+{
+    inference.
+    intro /z/.
+    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+typecheck.
+intro /z/. reduce //.
+infer /TM G L i/ /Htm/.
+unfold /TM_Ext in Htm/.
+
+assert /`tm (L z) (`boolean (L z)) = Ext.wk (TM G L i) (Ext.wk (BOOL G L i)) : U (1 + i)/ /btysyn/.
+{
+    inference.
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/ >> auto.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/ >> auto.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+typecheck. 
+{
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+{
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+{
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+{
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+unfold /Ext.pt at all, Ext.wk at all/.
+reflexivity.
+qed ();
+
+define /IF {M} G L i/
+/
+    `IF_TERM M G L i
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) .
+    Ext.t (IF_Ext G L i)
+/;
+unfold /IF/.
+inference.
+unfold /IF_Ext/.
+introOf /M G L i/. reduce //.
+
+infer /`IF_TERM M G L i/ /IFty/.
+infer /IF_Syn M G L i/ /IFtysyn/.
+
+apply /Ext.intro/.
+{
+    intro /z H/.
+
+    assert /Ext.wk (TP G L i) = tp (L z) : U (1 + i)/ /TPtp/.
+    {
+        inference.
+        rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+
+    assert /`tm (L z) (`boolean (L z))
+        = `Ext.wk
+            (`TM_Ext M G L i)
+            (`TM M G L i)
+            (`Ext.wk (`BOOL_Ext M G L i) (`BOOL M G L i))
+        : U i/ /TmTP/. 
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/ >> auto.
+        rewrite /-> Ext.syn_eq _ (BOOL G L i) z/ >> auto.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+
+    reduce //.
+    extensionality.
+    { exfalso >> auto. }
+    { exfalso >> auto. }
+    { exfalso >> auto. }
+    extensionality.
+    extensionality. 
+    extensionality. 
+    {
+        rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+        rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        reflexivity.
+    }
+    so /IF_Syn M G L i C b v0 v1/ /IFsyn/ >> auto. 
+}
+reduce //.
+intro /z/. 
+
+assert /Ext.wk (TP G L i) = tp (L z) : U (1 + i)/ /TPtp/.
+{
+    inference.
+    rewrite /-> Ext.syn_eq _ (TP G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+assert /`tm (L z) (`boolean (L z))
+    = `Ext.wk
+        (`TM_Ext M G L i)
+        (`TM M G L i)
+        (`Ext.wk (`BOOL_Ext M G L i) (`BOOL M G L i))
+    : U i/ /TmTP/. 
+{
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/ >> auto.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/ >> auto.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+typecheck. 
+{
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+{
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (BOOL G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+{
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (TT G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+{
+    rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+    rewrite /-> Ext.syn_eq _ (FF G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+rewrite /-> Ext.syn_eq _ (TM G L i) z/.
+unfold /Ext.pt at all, Ext.wk at all/.
+reflexivity.
+qed ();
+
+endModule ();

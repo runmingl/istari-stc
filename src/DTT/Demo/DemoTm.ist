@@ -1,0 +1,35 @@
+beginModule "Demo";
+
+File.import "../Semantics/Tm.ist";
+
+openModule /Tm/;
+
+(*
+ * In Sterling's notation, this is: 
+ *          TM : { TP -> U | syn ↪ tm }
+ *          TM A = pi_closed A 
+ *)
+
+lemma "demoTM"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    
+    (fn A . Glue.pi_closed A)
+       : Ext.t (Ext.S ((Tp.TP G L i) -> U i) (fn z . fn A . tm A))
+/;
+intro /M G L i/.
+infer /`TM M G L i/ /Tm/.
+unfold /TM in Tm/.
+unfold /TM_Ext in Tm/.
+unfold /Ext.wk at all/.
+unfold /Ext.wk in Tm at all/.
+
+auto. 
+qed ();
+
+endModule ();
+

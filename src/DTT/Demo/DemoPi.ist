@@ -1,0 +1,46 @@
+
+File.import "../Semantics/Pi.ist";
+
+openModule /Pi/;
+
+beginModule "DemoPi";
+
+(*
+ * In Sterling's notation, this is: 
+ *          PI : { (A : TP) -> (TM A -> TP) -> TP | syn ↪ pi }
+ *          PI A B = glue (fn z . pi A B) (fn e . { (a : TM A) -> TM (B a) | syn ↪ app e })
+ *)
+
+lemma "demoPI"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) .
+    
+    (fn A B .
+       Glue.glue (G (fn z . tp (L z)) (Tp.TP_Sem L i))
+         (fn z . pi A B)
+         (Glue.t (G
+            (fn z . tm (pi A B))
+            (fn e . Ext.t (Ext.S 
+                (forall (a : Tm.TM G L i A) . Tm.TM G L i (B a))
+                (fn z . app (e z)))))))
+       : Ext.t (Ext.S
+              (forall (A : Tp.TP G L i) . (Tm.TM G L i A -> Tp.TP G L i) -> Tp.TP G L i)
+              (fn z A B . pi A B))
+/;
+inference.
+intro /M G L i/.
+infer /`PI M G L i/ /Pi/.
+unfold /PI in Pi/.
+unfold /PI_Ext in Pi/.
+unfold /Tp.TP_open in Pi at all/.
+unfold /Tm.TMTP_open in Pi at all/.
+unfold /PI_SEM_Ext in Pi/.
+unfold /Ext.wk in Pi at all/.
+auto. 
+qed ();
+
+endModule ();

@@ -305,7 +305,10 @@ applyRaw /fIntro/.
         {
             inference.
 
-            val Term.Lam (_, term) = parseCurr /fn a . Ext.wk (TM G L i) (B a)/;
+            val term = 
+              case  parseCurr /fn a . Ext.wk (TM G L i) (B a)/ of 
+              | Term.Lam (_, term) => term
+              | _ => parseCurr /()/;
 
             RuleTactic.forallElimEq 
                 (parseCurr /Ext.wk (TM G L i) A/)

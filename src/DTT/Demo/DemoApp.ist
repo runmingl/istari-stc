@@ -1,0 +1,38 @@
+
+File.import "../Semantics/App.ist";
+
+openModule /App/;
+
+beginModule "DemoApp";
+
+(*
+ * In Sterling's notation, this is: 
+ *          APP : { TM (PI A B) -> (a : TM A) -> TM (B a) | syn ↪ app }
+ *          APP e a = (pi_closed e) a
+ *)
+
+lemma "demoAPP"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) .
+    
+    (fn A B e a . Glue.pi_closed e a)
+        : forall (A : Tp.TP G L i) (B : Tm.TM G L i A -> Tp.TP G L i) .
+            Ext.t (Ext.S
+                 (Tm.TM G L i (Pi.PI G L i A B) -> forall (a : Tm.TM G L i A) . Tm.TM G L i (B a))
+                 (fn z . app))
+/;
+inference.
+intro /M G L i/.
+infer /`APP M G L i/ /App/.
+unfold /APP in App/.
+unfold /APP_Ext in App/.
+unfold /Ext.wk in App at all/.
+auto.
+qed ();
+
+
+endModule ();

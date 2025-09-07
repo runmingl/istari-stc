@@ -12,18 +12,17 @@ beginModule "DemoBool";
  *          BOOL = glue (fn z . bool) ((e : tm bool) ⋉ (● (e = tt + e = ff))
  *)
 
-lemma "demo"
+lemma "demoBOOL"
 /
     forall 
         (M : intersect i . PhaseSig i)
         (G : intersect i . Glue.GLUE_CM M i)
         (L : `SynM M -> intersect i . Sig i) .
     forall (i : level) .
-    Glue.glue
-         (G (fn z . tp (L z)) (Tp.TP_Sem L i))
+
+    Glue.glue (G (fn z . tp (L z)) (Tp.TP_Sem L i))
          (fn z . boolean)
-         (Glue.t
-            (G
+         (Glue.t (G
                (fn z . tm boolean)
                (fn e .
                  ClosedM

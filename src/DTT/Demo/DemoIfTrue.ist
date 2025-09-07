@@ -1,0 +1,36 @@
+beginModule "Demo";
+
+File.import "../Semantics/If_true.ist";
+
+openModule /IfTrue/;
+
+(*
+ * In Sterling's notation, this is: 
+ *          IF_TRUE : IF TRUE C c0 c1 = c0 
+ *          IF_TRUE = ()
+ *)
+
+lemma "demoIFTRUE"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    
+    forall
+        (C : Tm.TM G L i (Bool.BOOL G L i) -> Tp.TP G L i)
+        (c0 : Tm.TM G L i (C (True.TT G L i)))
+        (c1 : Tm.TM G L i (C (False.FF G L i))) .
+        
+        If.IF G L i C (True.TT G L i) c0 c1 = c0 : Tm.TM G L i (C (True.TT G L i))
+/;
+inference. 
+intro /M G L i/.
+infer /`IF_TT M G L i/ /IfTrue/.
+unfold /Ext.wk in IfTrue at all/.
+exact /`IF_TT M G L i/.
+qed ();
+
+endModule ();
+

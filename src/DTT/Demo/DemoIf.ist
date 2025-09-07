@@ -1,0 +1,49 @@
+beginModule "Demo";
+
+File.import "../Semantics/If.ist";
+
+openModule /If/;
+
+(*
+ * In Sterling's notation, this is: 
+ *          IF : { (C : TM (BOOL) -> TP) -> (b : TM (BOOL)) -> C (TRUE) -> C (FALSE) -> C (b) | syn ↪ if }
+ *          IF C b c0 c1 = 
+ *            case pi_closed b of
+ *            | (∗ z)         => if C b c0 c1
+ *            | (η● (inl ())) => c0
+ *            | (η● (inr ())) => c1
+ *)
+
+lemma "demoIF"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    
+    (fn C b c0 c1 .
+       TryM'
+         (Glue.pi_closed b)
+         (fn z p . bool_ind C b c0 c1)
+         (fn lr p . (case lr of | inl v0 . c0 | inr v0 . c1)))
+       : Ext.t (Ext.S
+              (forall
+                (C : Tm.TM G L i (Bool.BOOL G L i) -> Tp.TP G L i)
+                (b : Tm.TM G L i (Bool.BOOL G L i)) .
+                Tm.TM G L i (C (True.TT G L i)) -> 
+                Tm.TM G L i (C (False.FF G L i)) -> 
+                Tm.TM G L i (C b))
+              (fn z . bool_ind))
+/;
+intro /M G L i/.
+infer /`IF M G L i/ /If/.
+unfold /IF in If/.
+unfold /IF_Ext in If/.
+unfold /IF_TERM in If/.
+unfold /Ext.wk in If at all/.
+auto. 
+qed ();
+
+endModule ();
+

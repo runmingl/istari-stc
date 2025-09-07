@@ -107,6 +107,8 @@ assert /forall (z : `SynM M) (a : tm (TP_open z A)) . Ext.wk (TM G L i) (B a) = 
 
 assert /forall z . Ext.wk (TM G L i) A = tm (TP_open z A) : U i/ /Hop/.
 {
+    inference.
+    intro /z/.
     symmetry.
     auto.
 }

@@ -1,0 +1,37 @@
+beginModule "Demo";
+
+File.import "../Semantics/False.ist";
+
+openModule /False/;
+
+(*
+ * In Sterling's notation, this is: 
+ *          FALSE : { TM (BOOL) | syn ↪ false }
+ *.         FALSE = glue (fn z . false) (η● (inr ()))
+ *)
+
+lemma "demoFALSE"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    
+    Glue.glue (G (fn z . tm boolean) (Bool.BOOL_Sem L))
+        (fn z . ff)
+        (EtaM (inr ()))
+         : Ext.t (Ext.S (Tm.TM G L i (Bool.BOOL G L i)) (fn z . ff))
+/;
+intro /M G L i/.
+infer /`FF M G L i/ /False/.
+unfold /FF in False/.
+unfold /FF_Sem in False/.
+unfold /FF_Ext in False/.
+unfold /Ext.wk in False at all/.
+
+auto. 
+qed ();
+
+endModule ();
+

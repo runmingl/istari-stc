@@ -1,0 +1,36 @@
+beginModule "Demo";
+
+File.import "../Semantics/Pi_beta.ist";
+
+openModule /PiBeta/;
+
+(*
+ * In Sterling's notation, this is: 
+ *          PI_BETA : APP (LAM f) = f 
+ *          PI_BETA = ()
+ *)
+
+lemma "demoPIBETA"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . Sig i) .
+    forall (i : level) . 
+    
+    forall
+        (A : Tp.TP G L i)
+        (B : Tm.TM G L i A -> Tp.TP G L i)
+        (f : forall (a : Tm.TM G L i A) . Tm.TM G L i (B a)) .
+        
+        App.APP G L i A B (Lam.LAM G L i A B f) = f : (forall (a : Tm.TM G L i A) . Tm.TM G L i (B a))
+/;
+inference. 
+intro /M G L i/.
+infer /PI_BETA M G L i/ /PiBeta/.
+unfold /Ext.wk in PiBeta at all/.
+exact /PI_BETA M G L i/.
+qed ();
+
+endModule ();
+
