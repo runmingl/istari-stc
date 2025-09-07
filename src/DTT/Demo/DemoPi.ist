@@ -8,7 +8,7 @@ beginModule "DemoPi";
 (*
  * In Sterling's notation, this is: 
  *          PI : { (A : TP) -> (TM A -> TP) -> TP | syn ↪ pi }
- *          PI A B = glue (fn z . pi A B) (fn e . { (a : TM A) -> TM (B a) | syn ↪ app e })
+ *          PI A B = glue (fn z . pi A B) ((e : tm (pi A B)) ⋉ { (a : TM A) -> TM (B a) | syn ↪ app e })
  *)
 
 lemma "demoPI"
