@@ -1,0 +1,179 @@
+(* This file contains tutorial examples on characteristic features of Istari *)
+
+lemma "funext"
+/ 
+    intersect i . forall (A B : U i) (f g : A -> B) . 
+    (forall (x : A) . f x = g x : B) -> f = g : (A -> B)
+/;
+inference.
+intro /i A B f g H/.
+extensionality.
+apply /H/.
+qed ();
+
+lemma "uip"
+/ 
+    intersect i . forall (A : U i) (M N : A) (H1 H2 : (M = N : A)) . 
+    H1 = H2 : (M = N : A)
+/;
+inference.
+intro /i A M N H1 H2/.
+extensionality.
+qed ();
+
+lemma "squash_unique"
+/
+    intersect i . forall (A : U i) (M : {A}) . M = () : {A}
+/;
+inference.
+intro /i A M/.
+extensionality.
+qed ();
+
+defineRaw /list/ /List.list/;
+
+Constant.setOpacity (parseConstant /list/) Constant.SOFT;
+
+define /vec A n/
+/
+    { x : list A | List.length(x) = n : nat }
+//
+    intersect i . forall (A : U i) (n : nat) . U i
+/;
+inference.
+unfold /vec/.
+typecheck.
+qed ();
+
+define /append {A} v1 v2/
+/
+    List.append v1 v2
+//
+    intersect i m n . forall (A : U i) (v1 : vec A m) (v2 : vec A n) . vec A (m + n)
+/;
+unfold /append, vec at all/.
+inference.
+introOf /i m n A v1 v2/. 
+destruct /v1/ /v1 H1/.
+destruct /v2/ /v2 H2/.
+unhide.
+splitOf >> auto.
+subst /m n/.
+apply /List.length_append/.
+qed ();
+
+lemma "assoc_wlfm"
+/
+    forall i (A : U i) n1 n2 n3 (v1 : vec A n1) (v2 : vec A n2) (v3 : vec A n3) .
+    (append (append v1 v2) v3 = append v1 (append v2 v3) : _) : U i
+/;
+inference.
+intro /i A n1 n2 n3 v1 v2 v3/.
+typecheck1 >> auto.
+eqtp /vec A (n1 + (n2 + n3))/ >> auto.
+compat.
+symmetry. 
+apply /Nat.plus_assoc/.
+qed ();
+
+lemma "assoc"
+/
+    forall i (A : U i) n1 n2 n3 (v1 : vec A n1) (v2 : vec A n2) (v3 : vec A n3) .
+    append (append v1 v2) v3 = append v1 (append v2 v3) : _
+/;
+inference.
+intro /i A n1 n2 n3 v1 v2 v3/.
+unfold /vec/.
+extensionality.
+{
+    destruct /v1/ /v1 H1/.
+    destruct /v2/ /v2 H2/.
+    destruct /v3/ /v3 H3/.
+    unfold /append at all/.
+    apply /List.append_assoc/.
+}
+{
+    split.
+    remember /append (append v1 v2) v3/ /_/ /x/ /H/.
+    destruct /x/ /x Hx/.
+    unhide.
+    assumption.
+}
+qed ();
+
+define /all {A n} f v/
+/
+    List.Forallb f v
+//
+    intersect i . forall (A : U i) n . (A -> bool) -> vec A n -> bool
+/;
+inference.
+introOf /i A n f v/.
+unfold /all/.
+destruct /v/ /v _/.
+typecheck.
+qed ();
+
+define /reverse {A} v/
+/
+    List.reverse v
+//
+    intersect i n . forall (A : U i) . vec A n -> vec A n
+/;
+unfold /reverse, vec at all/.
+inference.
+introOf /i n A v/.
+destruct /v/ /v H/.
+splitOf >> auto.
+subst /n/.
+apply /List.length_reverse/.
+qed ();
+
+lemma "all_append_append_eq"
+/
+    forall i (A : U i) n1 n2 n3 (v1 : vec A n1) (v2 : vec A n2) (v3 : vec A n3) (f : A -> bool) .
+    all f (append (append v1 v2) v3) = all f (append v1 (append v2 v3)) : bool
+/;
+inference.
+intro /i A n1 n2 n3 v1 v2 v3 f/.
+rewrite /<- assoc/.
+{ apply /Nat.plus_assoc/. }
+unfold /all at 1/.
+fold /`all A (n1 + n2 + n3) f (append (append v1 v2) v3)/.
+reflexivity.
+qed ();
+
+define /coe H/
+/
+    fn x . x
+//
+    intersect i (A B : U i) . A = B : U i -> A -> B
+/;
+unfold /coe/.
+inference.
+introOf /i A B H x/.
+reduce //.
+eqtp /A/ >> auto.
+qed ();
+
+lemma "rev_append_eq"
+/
+    forall i (A : U i) n1 n2 n3 (v1 : vec A n1) (v2 : vec A n2) (v3 : vec A n3) .
+    reverse (append v1 (append v2 v3)) = reverse (append (append v1 v2) v3) : _
+/;
+inference.
+intro /i A n1 n2 n3 v1 v2 v3/.
+
+(* Both direction of rewrite would fail *)
+(* rewrite /<- assoc/. *)
+(* rewrite /-> assoc/. *)
+
+assert /vec A (n1 + n2 + n3) = vec A (n1 + (n2 + n3)) : U i/ /Hcoe/.
+{ rewrite /-> Nat.plus_assoc/ >> auto.  }
+
+fold /coe Hcoe (append (append _ _) _)/.
+rewrite /-> assoc/.
+unfold /coe/.
+
+reflexivity.
+qed ();
