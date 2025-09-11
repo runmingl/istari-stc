@@ -5,7 +5,7 @@ File.import "../Semantics/Pi_beta.ist";
 openModule /PiBeta/;
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          PI_BETA : APP (LAM f) = f 
  *          PI_BETA = ()
  *)

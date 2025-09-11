@@ -1,0 +1,145 @@
+File.import "../../TacticLib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /CalfSyn/;
+
+beginModule "Tpc";
+
+define /CostAlg {B} i/
+/
+	exists 
+        (C : U i)
+        (sstep : nat -> C -> C)
+        (sstep_zero : forall (x : C) . sstep 0 x = x : _)
+        (sstep_plus : forall (n m : nat) (x : C) . sstep (n + m) x = sstep n (sstep m x) : _)
+        (sstep_beh : forall (n : nat) (x : C) . `beh B -> sstep n x = x : _)
+	.
+	unit
+//
+	forall (B : intersect i . BehSig i) .
+    forall (i : level) . U (1 + i)
+/;
+unfold /CostAlg/.
+inference.
+typecheck.
+qed ();
+
+define /SynAlg {M B} L i z X/
+/
+    (
+        `tmv B (L z) (`U' B (L z) X) ,
+        (
+            `step B (L z) X ,
+            (
+                zero_step B (L z) X,
+                (
+                    plus_step B (L z) X,
+                    (
+                        beh_step B (L z) X ,
+                        ()
+                    )
+                )
+            )
+
+        )
+    )
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) (z : `SynM M) 
+        (X : `tpc B (L z)) .
+    `CostAlg B i
+/;
+unfold /SynAlg/.
+inference.
+typecheck.
+unfold /CostAlg/.
+typecheck.
+qed ();
+
+
+define /TPC_Sem {M B} L i/ 
+/
+    fn X . Ext.t (Ext.S' (CostAlg i) (fn z . SynAlg L i z (X z)))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall i .
+    (forall (z : `SynM M) . `tpc B (L z)) -> U (1 + i)
+/;
+unfold /TPC_Sem/.
+inference.
+typecheck.
+qed ();
+
+lemma "TPC_Sem_isClosedModal"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall i A . 
+        isClosedModalM M (TPC_Sem L i A)
+/;
+inference.
+intro /M B L i A/.
+unfold /TPC_Sem/.
+apply /Ext.isClosedModal/.
+qed ();
+
+define /TPC {M B} G L i/
+/
+    Glue.t (G (fn z . `tpc B (L z)) (TPC_Sem L i))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . 
+    Ext.t (Ext.S' (U (1 + i)) (fn z . `tpc B (L z)))
+/;
+unfold /TPC/.
+inference.
+introOf /M B G L i/. 
+reduce //.
+
+infer /Ext.S' (U (1 + i)) (fn z . `tpc B (L z))/ /HtExt/.
+
+so /Glue.glueCM_tp M G (fn z . `tpc B (L z)) (TPC_Sem L i)/ /HtGlty/.
+1:{ apply /TPC_Sem_isClosedModal/. }
+
+apply /Ext.intro/.
+intro /z _/.
+rewrite /-> Glue.syn_eqty _ z/ >> auto.
+qed ();
+
+
+define /TPC_open {M B G L} z X/
+/
+    X
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    intersect (i : level) .
+    forall (z : `SynM M) (A : Ext.wk (TPC G L i)) . `tpc B (L z)
+/;
+unfold /TPC_open/.
+inference.
+introOf /M B G L i z A/. reduce //.
+infer /TPC G L i/ /HtTPC/.
+rewrite /-> Ext.syn_eq _ (TPC G L i) z in A/.
+unfold /Ext.pt in A, Ext.wk in A/.
+auto.
+qed ();
+
+
+endModule ();

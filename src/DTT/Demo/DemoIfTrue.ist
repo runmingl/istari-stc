@@ -5,7 +5,7 @@ File.import "../Semantics/If_true.ist";
 openModule /IfTrue/;
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          IF_TRUE : IF TRUE C c0 c1 = c0 
  *          IF_TRUE = ()
  *)

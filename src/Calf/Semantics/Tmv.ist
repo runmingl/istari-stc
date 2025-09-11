@@ -1,0 +1,135 @@
+File.import "../../TacticLib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /CalfSyn/;
+
+beginModule "Tmv";
+
+File.import "Tpv.ist";
+
+openModule /Tpv/;
+
+define /TMV_Ext {M B} G L i/
+/
+    Ext.S (Ext.wk (TPV G L i) -> U i) (fn z A . `tmv B (L z) A)
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . 
+    Ext.EXT (fn z . `tpv B (L z) -> U i) _ _
+/;
+unfold /TMV_Ext/.
+inference.
+introOf /M B G L i/. reduce //.
+
+infer /TPV G L i/ /HtTP/.
+
+typecheck.
+{
+    intro /z/.
+    RuleTactic.arrowEqUniv >> auto.
+    unfold /Ext.wk/.
+    so /Ext.syn_eq_open (Ext.S' (U (1 + i)) (fn z . `tpv B (L z))) (TPV G L i) z/ /Heq/.
+    unfold /Ext.pt in Heq/.
+    auto.
+}
+qed ();
+
+define /TMV {M B} G L i/
+/
+    fn A . Glue.pi_closed A
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . Ext.t (TMV_Ext G L i)
+/;
+unfold /TMV/.
+introOf /M B G L i/.
+reduce //.
+inference.
+
+so /Glue.glueCM_tp M G (fn z . `tpv B (L z)) (TPV_Sem L i)/ /HtGlty/.
+1:{ apply /TPV_Sem_isClosedModal/. }
+
+infer /Ext.S' (U (1 + i)) (fn z . `tpv B(L z))/ /HtExt/.
+infer /TPV G L i/ /HtTP/.
+
+infer /TMV_Ext G L i/ /HtTMExt/.
+
+so /Ext.intro (`TMV_Ext M B G L i)/ /fIntro/.
+applyRaw /fIntro/.
+{
+    intro /z H/. reduce //.
+    RuleTactic.arrowIntroEq >> auto.
+    rename /v0/ /A/.
+    reduce /H/.
+    unfold /Ext.wk in A, TPV in A/.
+    infer /Glue.pi_closed A/ /HtA/.
+    (* inference. *)
+    unfold /TPV_Sem in HtA/.
+    subsume /U i/ >> auto.
+    so /Ext.syn_eq _ (Glue.pi_closed A) z/ /H2/ >> auto.
+    unfold /Ext.pt in H2/.
+    applyEq /Ext.wk/ /U i/ /H2/ /H2'/ >> auto.
+    unfold /Ext.wk in H2' at all/.
+    etransitivity.
+    { hyp /H2'/. }
+    so /Glue.syn_eq _ z A/ /Heq/. reduce /Heq/.
+    compat.
+    auto.
+}
+{
+    RuleTactic.arrowIntroOf >> auto.
+    rename /v0/ /A/.
+    unfold /Ext.wk in A, TPV in A/.
+    infer /Glue.pi_closed A/ /HtA/.
+    unfold /TPV_Sem in HtA/.
+    infer /Ext.wk (Glue.pi_closed A)/ /HtAWk/ >> auto.
+    unfold /Ext.wk in HtAWk/.
+    subsume /U i/ >> auto.
+}
+qed ();
+
+define /TMTP_open {M Beh G L} z A B/
+/
+    B 
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (Beh : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . `Sig Beh i) .
+    intersect (i : level) .
+    forall (z : `SynM M)
+        (A : Ext.wk (TPV G L i))  
+        (B : Ext.wk (TMV G L i) A -> Ext.wk (TPV G L i)) .
+    `tmv Beh (L z) (TPV_open z A) -> `tpv Beh (L z) 
+/;
+unfold /TMTP_open/.
+inference.
+introOf /M Beh G L i z A B/. reduce //.
+
+assert /`tpv Beh (L z) = Ext.wk (TPV G L i) : U (1 + i)/ /TPtp/.
+{
+    rewrite /-> Ext.syn_eq _ (TPV G L i) z/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    reflexivity.
+}
+
+rewrite /-> Ext.syn_eq _ (TPV G L i) z in A/.
+unfold /Ext.pt in A, Ext.wk in A/.
+rewrite /-> Ext.syn_eq _ (TPV G L i) z in B/.
+rewrite /-> Ext.syn_eq _ (TMV G L i) z in B/.
+unfold /Ext.pt in B at all, Ext.wk in B at all/.
+unfold /TPV_open/.
+typecheck.
+qed ();
+
+endModule ();

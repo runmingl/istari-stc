@@ -5,7 +5,7 @@ File.import "../Semantics/Pi_eta.ist";
 openModule /PiEta/;
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          PI_ETA : e = LAM (APP e)
  *          PI_ETA = ()
  *)

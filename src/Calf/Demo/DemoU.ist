@@ -1,0 +1,42 @@
+beginModule "Demo";
+
+File.import "../Semantics/U.ist";
+
+openModule /U/;
+
+
+(*
+ * In on-paper notation, this is:
+ *              UU : { TPC -> TPV | syn ↪ U }
+ *              UU X = glue (fn z . U X) ((pi_closed X) . C)
+ *             
+ * The projection ". C" is the "forgetful" projection from CostAlg to its carrier C 
+ *)
+
+lemma "demoU"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . 
+    
+    (fn X .
+        Glue.glue (G (fn z . tpv) (Tpv.TPV_Sem L i))
+          (fn z . U' X)
+          (Glue.pi_closed X #1))
+        
+          : Ext.t (Ext.S (Tpc.TPC G L i -> Tpv.TPV G L i) (fn z . U'))
+/;
+intro /M B G L i/.
+infer /`UU M B G L i/ /UTy/.
+unfold /UU in UTy/.
+unfold /Tpc.TPC_open in UTy/.
+unfold /UU_Ext in UTy/.
+unfold /Ext.wk in UTy at all/.
+auto. 
+qed ();
+
+endModule ();
+

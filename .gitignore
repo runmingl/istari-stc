@@ -1,2 +1,5 @@
 .DS_Store
 *.isto
+.typechecked_success
+.typechecked_fail
+*.zip

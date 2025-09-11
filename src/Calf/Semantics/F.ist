@@ -1,0 +1,1609 @@
+File.import "../../TacticLib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /CalfSyn/;
+
+beginModule "F";
+
+File.import "Tpv.ist";
+File.import "Tpc.ist";
+File.import "Tmv.ist";
+
+openModule /Tpv/;
+openModule /Tpc/;
+openModule /Tmv/;
+
+define /TM_open {M B G L} z A/
+/
+    fn a . a 
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . `Sig B i) .
+    intersect (i : level) .
+    forall (z : `SynM M) .
+    forall (A : Ext.wk (TPV G L i)) .
+    Ext.wk (TMV G L i) A -> `tmv B (L z) (TPV_open z A)
+/;
+unfold /TM_open/.
+inference.
+introOf /M B G L i z A/.
+reduce //.
+rewrite /-> Ext.syn_eq _ (TMV G L i) z/.
+{
+    so /Ext.syn_eq _ v0 z/ /Heq/.
+    unfold /Ext.pt in Heq/.
+    assert /v0 = (fn A . `tmv B (L z) A) : (Ext.wk (TPV G L i) -> U i)/ /Heq2/.
+    {
+        inference.
+        subsume /Ext.t (TMV_Ext G L i)/.
+        {
+            inference.
+            unfold /TMV_Ext/.
+            apply /Ext.subtype/.
+            intro /z'/.
+            rewrite /-> Ext.syn_eq _ (TPV G L i) z'/.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            reflexivity.
+        }
+        auto. 
+    }
+    unfold /Ext.wk/.
+    transitivity /(fn A . `tmv B (L z) A) A/.
+    {
+        decompEq 1 /Ext.wk (TPV G L i) -> U i/ >> auto.
+    }
+    reduce //.
+    fold /TPV_open z A/.
+    reflexivity.
+}
+unfold /Ext.pt, Ext.wk/.
+fold /TPV_open z A at 0/.
+typecheck.
+qed ();
+
+define /FAlg_C_PreSem {M B} G L i A e/
+/
+    exists (a : Ext.wk (TMV G L i) A) 
+           (bc : `ClosedB B nat) . 
+           (`TryB B nat (fn _ . U i) bc 
+                (fn b . forall (z : `SynM M) . e z = `ret B (L z) (TPV_open z A) (TM_open z A a) : `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A))))
+                (fn c . forall (z : `SynM M) . e z = `step B (L z) (`F B (L z) (TPV_open z A)) c (`ret B (L z) (TPV_open z A) (TM_open z A a)) : `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A))))
+           )
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+    forall (e : forall (z : SynM) . `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A)))) .
+    U i
+/;
+unfold /FAlg_C_PreSem/.
+inference.
+introOf /M B G L i A e/.
+reduce //.
+typecheck.
+intro /b c/.
+unfold /eqtp_eq/.
+reduce //.
+typecheck.
+symmetry. 
+apply /beh_step/.
+auto. 
+qed ();
+
+define /FAlg_C_Sem {M B} G L i A e/ 
+/ 
+    `ClosedM M (FAlg_C_PreSem G L i A e)
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+    forall (e : forall (z : SynM) . `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A)))) .
+    U i
+/;
+unfold /FAlg_C_Sem/.
+inference.
+typecheck. 
+qed ();
+
+lemma "FAlg_C_Sem_isClosedModal"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) .
+    forall A e . isClosedModalM M (FAlg_C_Sem G L i A e)
+/;
+inference.
+intro /M B G L i A e/.
+unfold /FAlg_C_Sem/.
+apply /closed_isClosedModal/. 
+qed ();
+
+define /FAlg_C {M B} G L i A/
+/
+    Glue.t (G (fn z . `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A)))) (FAlg_C_Sem G L i A))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .       
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+    U i
+/;
+unfold /FAlg_C/.
+inference.
+introOf /M B G L i A/.
+reduce //.
+typecheck. 
+apply /FAlg_C_Sem_isClosedModal/.
+qed ();
+
+lemma "FAlg_C_open"
+/
+    forall
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+    forall (z : `SynM M) .
+    FAlg_C G L i A = `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A))) : U i
+/;
+inference.
+intro /M B G L i A z/.
+unfold /FAlg_C/.
+rewrite /-> Glue.syn_eqty _ z/ >> auto.
+apply /FAlg_C_Sem_isClosedModal/.
+qed ();
+
+define /FAlg_C_STR {M B} G L i A/
+/ 
+    `FAlg_C M B G L i A
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .       
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+    Ext.t (`Ext.S' M (U i) (fn z . `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A)))))
+/;
+unfold /FAlg_C_STR/.
+inference.
+introOf /M B G L i A/.
+apply /Ext.intro/.
+intro /z _/.
+apply /FAlg_C_open/.
+qed ();
+
+define /closed_mapM {M} i A B/
+/
+    fn f . fn cA . 
+      `TryM M A (fn a . `ClosedM M B) 
+        cA 
+        (fn z . `StarM M B z)
+        (fn a . `EtaM M B (f a))
+//
+    forall 
+        (M : intersect i . PhaseSig i) .
+    forall i .
+    forall (A B : U i) .
+    (A -> B) -> `ClosedM M A -> `ClosedM M B
+/;
+inference.
+unfold /closed_mapM/.
+introOf /M i A B f cA/.
+reduce //.
+typecheck.
+intro /z a/.
+unfold /eqtp_eq/.
+reduce //.
+apply /`CloLawM M B (f a) z/.
+qed ();
+
+lemma "closed_mapM_beta1"
+/
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall (A B : U i) .
+    forall (f : A -> B) .
+    forall (a : A) .
+    `closed_mapM M i A B f (`EtaM M A a) = `EtaM M B (f a) : `ClosedM M B
+/;
+inference.
+intro /M i A B f a/.
+unfold /closed_mapM/.
+apply /`TryM_beta1 M A (fn a . `ClosedM M B) (fn z . `StarM M B z) (fn a . `EtaM M B (f a)) a/.
+intro /z a'/.
+unfold /eqtp_eq/.
+reduce //.
+apply /`CloLawM M B (f a') z/.
+qed ();
+
+lemma "closed_mapM_beta2"
+/
+    forall (M : intersect i . PhaseSig i) .
+    intersect i .
+    forall (A B : U i) .
+    forall (f : A -> B) .
+    forall (z : `SynM M) .
+    `closed_mapM M i A B f (`StarM M A z) = `StarM M B z : `ClosedM M B
+/;
+inference.
+intro /M i A B f z/.
+unfold /closed_mapM/.
+apply /`TryM_beta2 M A (fn a . `ClosedM M B) z (fn z . `StarM M B z) (fn a . `EtaM M B (f a))/.
+intro /z' a/.
+unfold /eqtp_eq/.
+reduce //.
+apply /`CloLawM M B (f a) z'/.
+qed ();
+
+define /closed_mapB {Beh} i A B/
+/
+    fn f . fn cA . 
+      `TryB Beh A (fn a . `ClosedB Beh B) 
+        cA 
+        (fn z . `StarB Beh B z)
+        (fn a . `EtaB Beh B (f a))
+//
+    forall 
+        (Beh : intersect i . BehSig i) .
+    forall i .
+    forall (A B : U i) .
+    (A -> B) -> `ClosedB Beh A -> `ClosedB Beh B
+/;
+inference.
+unfold /closed_mapB/.
+introOf /Beh i A B f cA/.
+reduce //.
+typecheck.
+intro /z a/.
+unfold /eqtp_eq/.
+reduce //.
+apply /`CloLawB Beh B (f a) z/.
+qed ();
+
+lemma "closed_mapB_beta1"
+/
+    forall (Beh : intersect i . BehSig i) .
+    intersect i .
+    forall (A B : U i) .
+    forall (f : A -> B) .
+    forall (a : A) .
+    `closed_mapB Beh i A B f (`EtaB Beh A a) = `EtaB Beh B (f a) : `ClosedB Beh B
+/;
+inference.
+intro /Beh i A B f a/.
+unfold /closed_mapB/.
+apply /`TryB_beta1 Beh A (fn a . `ClosedB Beh B) (fn z . `StarB Beh B z) (fn a . `EtaB Beh B (f a)) a/.
+intro /z a'/.
+unfold /eqtp_eq/.
+reduce //.
+apply /`CloLawB Beh B (f a') z/.
+qed ();
+
+lemma "closed_mapB_beta2"
+/
+    forall (Beh : intersect i . BehSig i) .
+    intersect i .
+    forall (A B : U i) .
+    forall (f : A -> B) .
+    forall (b : `beh Beh) .
+    `closed_mapB Beh i A B f (`StarB Beh A b) = `StarB Beh B b : `ClosedB Beh B
+/;
+inference.
+intro /Beh i A B f b/.
+unfold /closed_mapB/.
+apply /`TryB_beta2 Beh A (fn a . `ClosedB Beh B) b (fn b . `StarB Beh B b) (fn a . `EtaB Beh B (f a))/.
+intro /b' a/.
+unfold /eqtp_eq/.
+reduce //.
+apply /`CloLawB Beh B (f a) b'/.
+qed ();
+
+define /FAlg_open {M B} G L i A z/
+/
+    fn e . e 
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i)
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+    forall (z : `SynM M) .
+    FAlg_C G L i A -> `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A)))
+/;
+unfold /FAlg_open/.
+inference.
+introOf /M B G L i A z e/.
+reduce //.
+eqtp /FAlg_C G L i A/.
+{
+    so /FAlg_C_open M B G L i A z/ /COpen/.
+    auto. 
+}
+auto. 
+qed ();
+
+define /FAlg_sstep_Sem {M B} G L i A c' e/
+/
+    (`closed_mapM M i 
+            (FAlg_C_PreSem G L i A (fn (z : `SynM M) . (FAlg_open G L i A z e))) 
+            (FAlg_C_PreSem G L i A (fn z . `step B (L z) (`F B (L z) (TPV_open z A)) c' (FAlg_open G L i A z e))) 
+                (fn s . (s #1 ,
+                        `TryB' B nat (fn bc . exists (bc' : `ClosedB B nat) . 
+                            ((`TryB B nat (fn _ . U i) bc' 
+                                 (fn b . forall (z : `SynM M) . `step B (L z) (`F B (L z) (TPV_open z A)) c' (FAlg_open G L i A z e) = `ret B (L z) (TPV_open z A) (TM_open z A (s #1)) : `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A))))
+                                 (fn c . forall (z : `SynM M) . `step B (L z) (`F B (L z) (TPV_open z A)) c' (FAlg_open G L i A z e) = `step B (L z) (`F B (L z) (TPV_open z A)) c (`ret B (L z) (TPV_open z A) (TM_open z A (s #1))) : `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A))))
+                            )))
+                            (fn co . `TryB B nat (fn _ . U i) co
+                                 (fn b . forall (z : `SynM M) . e = `ret B (L z) (TPV_open z A) (TM_open z A (s #1)) : `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A))))
+                                 (fn c . forall (z : `SynM M) . e = `step B (L z) (`F B (L z) (TPV_open z A)) c (`ret B (L z) (TPV_open z A) (TM_open z A (s #1))) : `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A))))
+                            )
+                            (s #2 #1)
+                            (fn z p . (`StarB B nat z , (fn z . ())))
+                            (fn c p . (`EtaB B nat (c' + c) , (fn z . ())))
+                            (s #2 #2)
+                        )) 
+                (Glue.pi_closed e))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .       
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+    forall (c' : nat) (e : FAlg_C G L i A) . 
+    FAlg_C_Sem G L i A (fn (z : `SynM M) . `step B (L z) (`F B (L z) (TPV_open z A)) c' (FAlg_open G L i A z e))
+/;
+unfold /FAlg_sstep_Sem/.
+inference.
+introOf /M B G L i A c' e/.
+reduce //. 
+
+assert /forall (x : forall (z : SynM) . tmv (U' (F (TPV_open z A)))) .
+  isClosedModalM M (FAlg_C_Sem G L i A x)/ /FAlg_Sem_isClosedModal/.
+{ apply /FAlg_C_Sem_isClosedModal/. }
+
+so /FAlg_C_open/ /COpen/.
+
+typecheck1.
+{
+    unfold /FAlg_C_Sem/.
+    typecheck.
+}
+typecheck_goals [3, 2, 1, 0];
+{
+    introOf /s/.
+    unfold /FAlg_C_PreSem/.
+    reduce //.
+    typecheck1. 
+    {
+        typecheck. 
+        intro /b c/.
+        unfold /eqtp_eq/.
+        reduce //.
+        typecheck. 
+        symmetry.
+        apply /beh_step/.
+        auto. 
+    }
+    {
+        unfold /FAlg_C_PreSem in s/.
+        typecheck. 
+    }
+    typecheck1.
+    4:{
+        inference. 
+        typecheck. 
+        intro /b a/.
+        unfold /eqtp_eq/.
+        reduce //.
+        typecheck. 
+        symmetry.
+        apply /beh_step/.
+        auto.
+    }
+    3:{
+        typecheck. 
+        intro /b a/.
+        unfold /eqtp_eq/.
+        reduce //.
+        typecheck.
+        symmetry.
+        apply /beh_step/.
+        auto.
+    }
+    4:{
+        introOf /z p/.
+        {
+            intro /b a/.
+            unfold /eqtp_eq/.
+            reduce //.
+            typecheck.
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+        reduce //.
+        typecheck. 
+        {
+            intro /b a/.
+            unfold /eqtp_eq/.
+            reduce //.
+            typecheck.
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+        eqtp /(forall (z1 : SynM) .
+               step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                 = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                 : tmv (U' (F (TPV_open z1 A))))/. 
+        {
+            symmetry.
+            so /`TryB_beta2 B nat (fn _ . U i) z 
+                ((fn b .
+                    forall (z1 : SynM) .
+                      step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                        = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                        : tmv (U' (F (TPV_open z1 A))))) 
+                    (
+                          (fn c .
+                        forall (z1 : SynM) .
+                          step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                            = step
+                                (F (TPV_open z1 A))
+                                c
+                                (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                            : tmv (U' (F (TPV_open z1 A))))
+                    )
+                    / /beta2/.
+            {
+                reduce /beta2/.
+                typecheck. 
+            }
+            {
+                intro /b c/.
+                unfold /eqtp_eq/.
+                reduce //.
+                typecheck.
+                symmetry.
+                apply /beh_step/.
+                auto.
+            }
+        } 
+        reduce /p/.
+        typecheck.
+
+        assert /(`TryB
+                  B
+                  nat
+                  (fn v0 . U i)
+                  (`StarB B nat z)
+                  (fn b .
+                    forall (z1 : `SynM M) .
+                      e
+                        = `ret
+                            B
+                            (L z1)
+                            (`TPV_open M B G L z1 A)
+                            (`TM_open M B G L z1 A (s #1))
+                        : `tmv B (L z1) (`U' B (L z1) (`F B (L z1) (`TPV_open M B G L z1 A))))
+                  (fn c .
+                    forall (z1 : `SynM M) .
+                      e
+                        = `step
+                            B
+                            (L z1)
+                            (`F B (L z1) (`TPV_open M B G L z1 A))
+                            c
+                            (`ret
+                               B
+                               (L z1)
+                               (`TPV_open M B G L z1 A)
+                               (`TM_open M B G L z1 A (s #1)))
+                        : `tmv B (L z1) (`U' B (L z1) (`F B (L z1) (`TPV_open M B G L z1 A))))) 
+                    =      
+                    (  (fn b .
+                    forall (z11 : `SynM M) .
+                      e
+                        = `ret B (L z11) (`TPV_open M B G L z11 A) (`TM_open M B G L z11 A (s #1))
+                        : `tmv B (L z11) (`U' B (L z11) (`F B (L z11) (`TPV_open M B G L z11 A))))) z : U i/ /pEq/.
+        {
+            inference.
+            so /`TryB_beta2 B nat (fn _ . U i) z 
+                ((fn b .
+                    forall (z1 : SynM) .
+                      e
+                        = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                        : tmv (U' (F (TPV_open z1 A))))) 
+                    (
+                          (fn c .
+                        forall (z1 : SynM) .
+                          e
+                            = step
+                                (F (TPV_open z1 A))
+                                c
+                                (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                            : tmv (U' (F (TPV_open z1 A))))
+                    )
+                    / /beta2/.
+            {
+                apply /beta2/.
+            }
+            {
+                intro /b c/.
+                unfold /eqtp_eq/.
+                reduce //.
+                typecheck.
+                symmetry.
+                apply /beh_step/.
+                auto.
+            }
+        }
+        {
+            reduce /pEq/.
+            rewrite /-> pEq in p/.
+            infer /p z1/ /psyn/.
+            rewrite /-> p z1/.
+            unfold /FAlg_open/.
+            apply /beh_step/.
+            auto.
+        }
+    }
+    4:{
+        introOf /c p/.
+        {
+            intro /b a/.
+            unfold /eqtp_eq/.
+            reduce //.
+            typecheck.
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+        reduce //.
+        typecheck.
+        {
+            intro /b a/.
+            unfold /eqtp_eq/.
+            reduce //.
+            typecheck.
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+        eqtp /forall (z : SynM) .
+          step (F (TPV_open z A)) c' (FAlg_open G L i A z e)
+            = step
+                (F (TPV_open z A))
+                (c' + c)
+                (ret (TPV_open z A) (TM_open z A (s #1)))
+            : tmv (U' (F (TPV_open z A)))/.
+        {
+            symmetry.
+            so /`TryB_beta1 B nat (fn _ . U i)
+                ((fn b .
+                    forall (z1 : SynM) .
+                      step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                        = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                        : tmv (U' (F (TPV_open z1 A))))) 
+                    (
+                          (fn c .
+                        forall (z1 : SynM) .
+                          step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                            = step
+                                (F (TPV_open z1 A))
+                                c
+                                (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                            : tmv (U' (F (TPV_open z1 A))))
+                    )
+                     (c' + c)
+                    / /beta2/.
+            {
+                reduce /beta2/.
+                typecheck. 
+            }
+            {
+                intro /b a/.
+                unfold /eqtp_eq/.
+                reduce //.
+                typecheck.
+                symmetry.
+                apply /beh_step/.
+                auto.
+            }
+        }
+        typecheck. 
+        reduce /p/.
+        assert /`TryB
+                  B
+                  nat
+                  (fn v0 . U i)
+                  (`EtaB B nat c)
+                  (fn b .
+                    forall (z : `SynM M) .
+                      e
+                        = `ret B (L z) (`TPV_open M B G L z A) (`TM_open M B G L z A (s #1))
+                        : `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A))))
+                  (fn c1 .
+                    forall (z : `SynM M) .
+                      e
+                        = `step
+                            B
+                            (L z)
+                            (`F B (L z) (`TPV_open M B G L z A))
+                            c1
+                            (`ret
+                               B
+                               (L z)
+                               (`TPV_open M B G L z A)
+                               (`TM_open M B G L z A (s #1)))
+                        : `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A))))
+        = (
+                    forall (z : `SynM M) .
+                      e
+                        = `step
+                            B
+                            (L z)
+                            (`F B (L z) (`TPV_open M B G L z A))
+                            c
+                            (`ret
+                               B
+                               (L z)
+                               (`TPV_open M B G L z A)
+                               (`TM_open M B G L z A (s #1)))
+                        : `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A)))) : U i/ /pEq/.
+        {
+            inference.
+            so /`TryB_beta1 B nat (fn _ . U i)
+                ((fn b .
+                    forall (z1 : SynM) .
+                      e
+                        = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                        : tmv (U' (F (TPV_open z1 A))))) 
+                    (
+                          (fn c1 .
+                        forall (z1 : SynM) .
+                          e
+                            = step
+                                (F (TPV_open z1 A))
+                                c1
+                                (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                            : tmv (U' (F (TPV_open z1 A))))
+                    )
+                     c
+                    / /beta1/.
+            {
+                apply /beta1/.
+            }
+            {
+                intro /b a/.
+                unfold /eqtp_eq/.
+                reduce //.
+                typecheck.
+                symmetry.
+                apply /beh_step/.
+                auto.
+            }
+        }
+        rewrite /-> pEq in p/.
+        infer /p z/ /psyn/.
+        rewrite /-> p z/.
+        unfold /FAlg_open/.
+        symmetry.
+        apply /plus_step/.
+    }
+    4:{
+        typecheck. 
+        {
+            introEq /b/.
+            {
+                reflexivity.
+            }
+            reduce //.
+            typecheck. 
+            fold /FAlg_open G L i A z e at 1/.
+            reflexivity.
+        }
+        {
+            introEq /c/.
+            {
+                reflexivity.
+            }
+            {
+                reduce //.
+                typecheck. 
+                fold /FAlg_open G L i A z e at 1/.
+                reflexivity.
+            }
+        }
+        {
+            intro /b a/.
+            unfold /eqtp_eq/.
+            reduce //.
+            typecheck.
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+    }
+    4:{
+        intro /b a/.
+        unfold /eqtp_eq/.
+        reduce //.
+        introEq /p/.
+        {
+            intro /b' a'/.
+            unfold /eqtp_eq/.
+            reduce //.
+            typecheck.
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+        {
+            intro /b' a'/.
+            unfold /eqtp_eq/.
+            reduce //.
+            typecheck.
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+        {
+            eqtp /(forall (z1 : SynM) .
+               step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                 = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                 : tmv (U' (F (TPV_open z1 A))))/. 
+            {
+                symmetry.
+                so /`TryB_beta2 B nat (fn _ . U i) b 
+                    ((fn b .
+                        forall (z1 : SynM) .
+                          step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                            = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                            : tmv (U' (F (TPV_open z1 A))))) 
+                        (
+                              (fn c .
+                            forall (z1 : SynM) .
+                              step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                                = step
+                                    (F (TPV_open z1 A))
+                                    c
+                                    (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                : tmv (U' (F (TPV_open z1 A))))
+                        )
+                        / /beta2/.
+                {
+                    reduce /beta2/.
+                    typecheck. 
+                }
+                {
+                    intro /b' c/.
+                    unfold /eqtp_eq/.
+                    reduce //.
+                    typecheck.
+                    symmetry.
+                    apply /beh_step/.
+                    auto.
+                }
+            } 
+            reduce /v0/.
+            typecheck.
+
+            assert /(`TryB
+                      B
+                      nat
+                      (fn v0 . U i)
+                      (`StarB B nat b)
+                      (fn b .
+                        forall (z1 : `SynM M) .
+                          e
+                            = `ret
+                                B
+                                (L z1)
+                                (`TPV_open M B G L z1 A)
+                                (`TM_open M B G L z1 A (s #1))
+                            : `tmv B (L z1) (`U' B (L z1) (`F B (L z1) (`TPV_open M B G L z1 A))))
+                      (fn c .
+                        forall (z1 : `SynM M) .
+                          e
+                            = `step
+                                B
+                                (L z1)
+                                (`F B (L z1) (`TPV_open M B G L z1 A))
+                                c
+                                (`ret
+                                   B
+                                   (L z1)
+                                   (`TPV_open M B G L z1 A)
+                                   (`TM_open M B G L z1 A (s #1)))
+                            : `tmv B (L z1) (`U' B (L z1) (`F B (L z1) (`TPV_open M B G L z1 A))))) 
+                        =      
+                        (  (fn b .
+                        forall (z11 : `SynM M) .
+                          e
+                            = `ret B (L z11) (`TPV_open M B G L z11 A) (`TM_open M B G L z11 A (s #1))
+                            : `tmv B (L z11) (`U' B (L z11) (`F B (L z11) (`TPV_open M B G L z11 A))))) b : U i/ /pEq/.
+            {
+                inference.
+                so /`TryB_beta2 B nat (fn _ . U i) b 
+                    ((fn b .
+                        forall (z1 : SynM) .
+                          e
+                            = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                            : tmv (U' (F (TPV_open z1 A))))) 
+                        (
+                              (fn c .
+                            forall (z1 : SynM) .
+                              e
+                                = step
+                                    (F (TPV_open z1 A))
+                                    c
+                                    (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                : tmv (U' (F (TPV_open z1 A))))
+                        )
+                        / /beta2/.
+                {
+                    apply /beta2/.
+                }
+                {
+                    intro /b' c/.
+                    unfold /eqtp_eq/.
+                    reduce //.
+                    typecheck.
+                    symmetry.
+                    apply /beh_step/.
+                    auto.
+                }
+            }
+            {
+                reduce /pEq/.
+                rewrite /-> pEq in v0/.
+                infer /v0 z1/ /psyn/.
+                rewrite /-> v0 z1/.
+                unfold /FAlg_open/.
+                apply /beh_step/.
+                auto.
+            }
+        }
+        {
+            intro /b' a'/.
+            unfold /eqtp_eq/.
+            reduce //.
+            typecheck.
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+        {
+            intro /b' a'/.
+            unfold /eqtp_eq/.
+            reduce //.
+            typecheck.  
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+        {
+            rename /a/ /c/.
+            eqtp /forall (z : SynM) .
+                  step (F (TPV_open z A)) c' (FAlg_open G L i A z e)
+                    = step
+                        (F (TPV_open z A))
+                        (c' + c)
+                        (ret (TPV_open z A) (TM_open z A (s #1)))
+                    : tmv (U' (F (TPV_open z A)))/.
+            {
+                symmetry.
+                so /`TryB_beta1 B nat (fn _ . U i)
+                    ((fn b .
+                        forall (z1 : SynM) .
+                          step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                            = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                            : tmv (U' (F (TPV_open z1 A))))) 
+                        (
+                              (fn c .
+                            forall (z1 : SynM) .
+                              step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                                = step
+                                    (F (TPV_open z1 A))
+                                    c
+                                    (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                : tmv (U' (F (TPV_open z1 A))))
+                        )
+                         (c' + c)
+                        / /beta2/.
+                {
+                    reduce /beta2/.
+                    typecheck. 
+                }
+                {
+                    intro /b' a/.
+                    unfold /eqtp_eq/.
+                    reduce //.
+                    typecheck.
+                    symmetry.
+                    apply /beh_step/.
+                    auto.
+                }
+            }
+            typecheck. 
+            reduce /v0/.
+            assert /`TryB
+                      B
+                      nat
+                      (fn v0 . U i)
+                      (`StarB B nat b)
+                      (fn b .
+                        forall (z : `SynM M) .
+                          e
+                            = `ret B (L z) (`TPV_open M B G L z A) (`TM_open M B G L z A (s #1))
+                            : `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A))))
+                      (fn c1 .
+                        forall (z : `SynM M) .
+                          e
+                            = `step
+                                B
+                                (L z)
+                                (`F B (L z) (`TPV_open M B G L z A))
+                                c1
+                                (`ret
+                                   B
+                                   (L z)
+                                   (`TPV_open M B G L z A)
+                                   (`TM_open M B G L z A (s #1)))
+                            : `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A))))
+            = (
+                        forall (z : `SynM M) .
+                          e
+                            = `ret B (L z) (`TPV_open M B G L z A) (`TM_open M B G L z A (s #1))
+                            : `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A)))) : U i/ /pEq/.
+            {
+                inference.
+                so /`TryB_beta2 B nat (fn _ . U i) b
+                    ((fn b .
+                        forall (z1 : SynM) .
+                          e
+                            = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                            : tmv (U' (F (TPV_open z1 A))))) 
+                        (
+                              (fn c1 .
+                            forall (z1 : SynM) .
+                              e
+                                = step
+                                    (F (TPV_open z1 A))
+                                    c1
+                                    (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                : tmv (U' (F (TPV_open z1 A))))
+                        )
+                        / /beta2/.
+                {
+                    apply /beta2/.
+                }
+                {
+                    intro /b' a/.
+                    unfold /eqtp_eq/.
+                    reduce //.
+                    typecheck.
+                    symmetry.
+                    apply /beh_step/.
+                    auto.
+                }
+            }
+            rewrite /-> pEq in v0/.
+            infer /v0 z/ /psyn/.
+            rewrite /-> v0 z/.
+            unfold /FAlg_open/.
+            etransitivity.
+            {
+                apply /beh_step/.
+                auto.
+            }
+            symmetry.
+            apply /beh_step/.
+            auto.
+        }
+        {
+            reduce //. 
+            extensionality. 
+            {
+                intro /b' a'/.
+                unfold /eqtp_eq/.
+                reduce //.
+                typecheck.
+                symmetry.
+                apply /beh_step/.
+                auto.
+            }
+            {
+                eqtp /(forall (z1 : SynM) .
+                   step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                     = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                     : tmv (U' (F (TPV_open z1 A))))/. 
+                {
+                    symmetry.
+                    so /`TryB_beta2 B nat (fn _ . U i) b 
+                        ((fn b .
+                            forall (z1 : SynM) .
+                              step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                                = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                                : tmv (U' (F (TPV_open z1 A))))) 
+                            (
+                                  (fn c .
+                                forall (z1 : SynM) .
+                                  step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                                    = step
+                                        (F (TPV_open z1 A))
+                                        c
+                                        (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                    : tmv (U' (F (TPV_open z1 A))))
+                            )
+                            / /beta2/.
+                    {
+                        reduce /beta2/.
+                        typecheck. 
+                    }
+                    {
+                        intro /b' c/.
+                        unfold /eqtp_eq/.
+                        reduce //.
+                        typecheck.
+                        symmetry.
+                        apply /beh_step/.
+                        auto.
+                    }
+                } 
+                reduce /p/.
+                typecheck.
+
+                assert /(`TryB
+                          B
+                          nat
+                          (fn v0 . U i)
+                          (`StarB B nat b)
+                          (fn b .
+                            forall (z1 : `SynM M) .
+                              e
+                                = `ret
+                                    B
+                                    (L z1)
+                                    (`TPV_open M B G L z1 A)
+                                    (`TM_open M B G L z1 A (s #1))
+                                : `tmv B (L z1) (`U' B (L z1) (`F B (L z1) (`TPV_open M B G L z1 A))))
+                          (fn c .
+                            forall (z1 : `SynM M) .
+                              e
+                                = `step
+                                    B
+                                    (L z1)
+                                    (`F B (L z1) (`TPV_open M B G L z1 A))
+                                    c
+                                    (`ret
+                                       B
+                                       (L z1)
+                                       (`TPV_open M B G L z1 A)
+                                       (`TM_open M B G L z1 A (s #1)))
+                                : `tmv B (L z1) (`U' B (L z1) (`F B (L z1) (`TPV_open M B G L z1 A))))) 
+                            =      
+                            (  (fn b .
+                            forall (z11 : `SynM M) .
+                              e
+                                = `ret B (L z11) (`TPV_open M B G L z11 A) (`TM_open M B G L z11 A (s #1))
+                                : `tmv B (L z11) (`U' B (L z11) (`F B (L z11) (`TPV_open M B G L z11 A))))) b : U i/ /pEq/.
+                {   
+                    inference.
+                    so /`TryB_beta2 B nat (fn _ . U i) b 
+                        ((fn b .
+                            forall (z1 : SynM) .
+                              e
+                                = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                                : tmv (U' (F (TPV_open z1 A))))) 
+                            (
+                                  (fn c .
+                                forall (z1 : SynM) .
+                                  e
+                                    = step
+                                        (F (TPV_open z1 A))
+                                        c
+                                        (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                    : tmv (U' (F (TPV_open z1 A))))
+                            )
+                            / /beta2/.
+                    {
+                        apply /beta2/.
+                    }
+                    {
+                        intro /b' c/.
+                        unfold /eqtp_eq/.
+                        reduce //.
+                        typecheck.
+                        symmetry.
+                        apply /beh_step/.
+                        auto.
+                    }
+                }
+                {
+                    reduce /pEq/.
+                    rewrite /-> pEq in p/.
+                    infer /p z1/ /psyn/.
+                    rewrite /-> p z1/.
+                    unfold /FAlg_open/.
+                    apply /beh_step/.
+                    auto.
+                }
+            }
+            {
+                intro /b' a'/.
+                unfold /eqtp_eq/.
+                reduce //.
+                typecheck.
+                symmetry.
+                apply /beh_step/.
+                auto.
+            }
+            {
+                rename /a/ /c/.
+                eqtp /forall (z : SynM) .
+                      step (F (TPV_open z A)) c' (FAlg_open G L i A z e)
+                        = step
+                            (F (TPV_open z A))
+                            (c' + c)
+                            (ret (TPV_open z A) (TM_open z A (s #1)))
+                        : tmv (U' (F (TPV_open z A)))/.
+                {
+                    symmetry.
+                    so /`TryB_beta1 B nat (fn _ . U i)
+                        ((fn b .
+                            forall (z1 : SynM) .
+                              step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                                = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                                : tmv (U' (F (TPV_open z1 A))))) 
+                            (
+                                  (fn c .
+                                forall (z1 : SynM) .
+                                  step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                                    = step
+                                        (F (TPV_open z1 A))
+                                        c
+                                        (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                    : tmv (U' (F (TPV_open z1 A))))
+                            )
+                             (c' + c)
+                            / /beta2/.
+                    {
+                        reduce /beta2/.
+                        typecheck. 
+                    }
+                    {
+                        intro /b' a/.
+                        unfold /eqtp_eq/.
+                        reduce //.
+                        typecheck.
+                        symmetry.
+                        apply /beh_step/.
+                        auto.
+                    }
+            }
+            typecheck. 
+            assert /`TryB
+                      B
+                      nat      
+                        (fn v0 . U i)
+                        (`StarB B nat b)    
+                        (fn b .
+                            forall (z : `SynM M) .
+                              e
+                                = `ret B (L z) (`TPV_open M B G L z A) (`TM_open M B G L z A (s #1))
+                                : `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A))))
+                        (fn c1 .
+                            forall (z : `SynM M) .
+                              e
+                                = `step
+                                    B
+                                    (L z)
+                                    (`F B (L z) (`TPV_open M B G L z A))
+                                    c1  
+                                    (`ret
+                                       B
+                                       (L z)
+                                       (`TPV_open M B G L z A)
+                                       (`TM_open M B G L z A (s #1)))
+                                : `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A))))
+            = (
+                        forall (z : `SynM M) .
+                          e
+                            = `ret B (L z) (`TPV_open M B G L z A) (`TM_open M B G L z A (s #1))
+                            : `tmv B (L z) (`U' B (L z) (`F B (L z) (`TPV_open M B G L z A)))) : U i/ /pEq/.
+            {
+                inference.
+                so /`TryB_beta2 B nat (fn _ . U i) b
+                    ((fn b .
+                        forall (z1 : SynM) .
+                          e
+                            = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                            : tmv (U' (F (TPV_open z1 A))))) 
+                        (
+                              (fn c1 .
+                            forall (z1 : SynM) .
+                              e
+                                = step
+                                    (F (TPV_open z1 A))
+                                    c1
+                                    (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                : tmv (U' (F (TPV_open z1 A))))
+                        )
+                        / /beta2/.
+                {
+                    apply /beta2/.  
+                }
+                {
+                    intro /b' a/.
+                    unfold /eqtp_eq/.
+                    reduce //.
+                    typecheck.
+                    symmetry.
+                    apply /beh_step/.
+                    auto.
+                }
+        }
+        rewrite /-> pEq in p/.
+        infer /p z/ /psyn/.
+        rewrite /-> p z/.
+        unfold /FAlg_open/.
+        etransitivity.
+        {
+            apply /beh_step/.
+            auto.
+        }
+        symmetry.
+        apply /beh_step/.
+        auto.
+    }
+    {
+        reduce //.
+        apply /closedB_eq/.
+        auto. 
+    }
+    {
+        reduce //.
+        reflexivity.
+        {
+            eqtp /(forall (z1 : SynM) .
+               step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                 = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                 : tmv (U' (F (TPV_open z1 A))))/. 
+            {
+                symmetry.
+                so /`TryB_beta2 B nat (fn _ . U i) b 
+                    ((fn b .
+                        forall (z1 : SynM) .
+                          step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                            = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                            : tmv (U' (F (TPV_open z1 A))))) 
+                        (
+                              (fn c .
+                            forall (z1 : SynM) .
+                              step (F (TPV_open z1 A)) c' (FAlg_open G L i A z1 e)
+                                = step
+                                    (F (TPV_open z1 A))
+                                    c
+                                    (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                : tmv (U' (F (TPV_open z1 A))))
+                        )
+                        / /beta2/.
+                {
+                    reduce /beta2/.
+                    typecheck. 
+                }
+                {
+                    intro /b' c/.
+                    unfold /eqtp_eq/.
+                    reduce //.
+                    typecheck.
+                    symmetry.
+                    apply /beh_step/.
+                    auto.
+                }
+            } 
+            reduce /p/.
+            typecheck.
+
+            assert /(`TryB
+                      B
+                      nat
+                      (fn v0 . U i)
+                      (`StarB B nat b)
+                      (fn b .
+                        forall (z1 : `SynM M) .
+                          e
+                            = `ret
+                                B
+                                (L z1)
+                                (`TPV_open M B G L z1 A)
+                                (`TM_open M B G L z1 A (s #1))
+                            : `tmv B (L z1) (`U' B (L z1) (`F B (L z1) (`TPV_open M B G L z1 A))))
+                      (fn c .
+                        forall (z1 : `SynM M) .
+                          e
+                            = `step
+                                B
+                                (L z1)
+                                (`F B (L z1) (`TPV_open M B G L z1 A))
+                                c
+                                (`ret
+                                   B
+                                   (L z1)
+                                   (`TPV_open M B G L z1 A)
+                                   (`TM_open M B G L z1 A (s #1)))
+                            : `tmv B (L z1) (`U' B (L z1) (`F B (L z1) (`TPV_open M B G L z1 A))))) 
+                        =      
+                        (  (fn b .
+                        forall (z11 : `SynM M) .
+                          e
+                            = `ret B (L z11) (`TPV_open M B G L z11 A) (`TM_open M B G L z11 A (s #1))
+                            : `tmv B (L z11) (`U' B (L z11) (`F B (L z11) (`TPV_open M B G L z11 A))))) b : U i/ /pEq/.
+            {   
+                inference.
+                so /`TryB_beta2 B nat (fn _ . U i) b 
+                    ((fn b .
+                        forall (z1 : SynM) .
+                          e
+                            = ret (TPV_open z1 A) (TM_open z1 A (s #1))
+                            : tmv (U' (F (TPV_open z1 A))))) 
+                        (
+                              (fn c .
+                            forall (z1 : SynM) .
+                              e
+                                = step
+                                    (F (TPV_open z1 A))
+                                    c
+                                    (ret (TPV_open z1 A) (TM_open z1 A (s #1)))
+                                : tmv (U' (F (TPV_open z1 A))))
+                        )
+                        / /beta2/.
+                {
+                    apply /beta2/.
+                }
+                {
+                    intro /b' c/.
+                    unfold /eqtp_eq/.
+                    reduce //.
+                    typecheck.
+                    symmetry.
+                    apply /beh_step/.
+                    auto.
+                }
+            }
+            {
+                reduce /pEq/.
+                rewrite /-> pEq in p/.
+                infer /p z1/ /psyn/.
+                rewrite /-> p z1/.
+                unfold /FAlg_open/.
+                apply /beh_step/.
+                auto.
+            }
+        }
+    }
+}
+}
+typechecker ();
+}
+unfold /FAlg_C in e/.
+infer /Glue.pi_closed e/ /closedE/.
+unfold /FAlg_C_Sem in closedE/.
+eqtp /ClosedM (FAlg_C_PreSem G L i A (Glue.pi_open e))/.
+1:{ auto. }
+unfold /FAlg_C_PreSem at all/.
+typecheck.
+{
+    reduce //.
+    introEq /b/.
+    {
+        reflexivity.
+    }
+    {
+        unfold /FAlg_C/.
+        reflexivity.
+    }
+    reduce //.
+    typecheck. 
+    rewrite /-> Glue.syn_eq (G (fn z . tmv (U' (F (TPV_open z A)))) (FAlg_C_Sem G L i A)) z e/.
+    {
+        reflexivity.
+    }
+    {
+        unfold /FAlg_C/.
+        reflexivity.
+    }
+    fold /FAlg_open G L i A z e at 0/.
+    reflexivity.
+    unfold /FAlg_C/.
+    reflexivity.
+}
+{
+    introEq /c/.
+    {
+        reflexivity.
+    }
+    {
+        reflexivity.
+    }
+    {
+        unfold /FAlg_C/.
+        reflexivity.
+    }
+    reduce //.
+    typecheck.
+    rewrite /-> Glue.syn_eq (G (fn z . tmv (U' (F (TPV_open z A)))) (FAlg_C_Sem G L i A)) z e/.
+    {
+        reflexivity.
+    }
+    {
+        unfold /FAlg_C/.
+        reflexivity.
+    }
+    fold /FAlg_open G L i A z e at 0/.
+    reflexivity.
+    unfold /FAlg_C/.
+    reflexivity.
+}
+{
+    intro /b a'/.
+    unfold /eqtp_eq/.
+    reduce //.
+    typecheck.
+    {
+        reflexivity.
+    }
+    symmetry.
+    apply /beh_step/.
+    auto.
+}
+qed ();
+
+define /FAlg_sstep {M B} G L i A/
+/ 
+    fn c' e . 
+      Glue.glue (G (fn z . `tmv B (L z) (`U' B (L z) (`F B (L z) (TPV_open z A)))) (FAlg_C_Sem G L i A))
+         (fn z . `step B (L z) (`F B (L z) (TPV_open z A)) c' (FAlg_open G L i A z e))
+         (`FAlg_sstep_Sem M B G L i A c' e)
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .       
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+    nat -> FAlg_C G L i A -> FAlg_C G L i A
+/;
+unfold /FAlg_sstep/.
+inference.
+introOf /M B G L i A c' e/.
+reduce //.
+unfold /FAlg_C/.
+
+assert /forall (x : forall (z : SynM) . tmv (U' (F (TPV_open z A)))) .
+  isClosedModalM M (FAlg_C_Sem G L i A x)/ /FAlg_Sem_isClosedModal/.
+{ apply /FAlg_C_Sem_isClosedModal/. }
+
+so /FAlg_C_open/ /COpen/.
+
+typecheck1.
+typecheck_goals [5, 4, 3, 2, 1, 0];
+
+typecheck.
+qed ();
+
+lemma "FAlg_sstep_open"
+/
+    forall
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+    forall (z : `SynM M) .
+    `FAlg_sstep M B G L i A = `step B (L z) (`F B (L z) (TPV_open z A)) : _ 
+/;
+inference.
+intro /M B G L i A z/.
+introEq /c e/.
+{
+    apply /FAlg_C_open/.
+}
+{
+    symmetry.
+    apply /FAlg_C_open/.
+}
+
+infer /FAlg_sstep G L i A c e/ /sstepTy/.
+
+unfold /FAlg_sstep/.
+
+assert /forall (x : forall (z : SynM) . tmv (U' (F (TPV_open z A)))) .
+  isClosedModalM M (FAlg_C_Sem G L i A x)/ /FAlg_Sem_isClosedModal/.
+{ apply /FAlg_C_Sem_isClosedModal/. }
+
+so /Glue.eq_syn (G (fn z1 . tmv (U' (F (TPV_open z1 A)))) (FAlg_C_Sem G L i A)) z (fn z1 . step (F (TPV_open z1 A)) c (FAlg_open G L i A z1 e)) (FAlg_sstep_Sem G L i A c e)/ /eq_syn_refl/.
+{
+    reduce /eq_syn_refl/.
+    eqtp /tmv (U' (F (TPV_open z A)))/.
+    {
+        symmetry.
+        so /FAlg_C_open M B G L i A z/ /eqC/.
+        typecheck.
+    }
+    fold /FAlg_open G L i A z e at 2/.
+    auto. 
+}
+qed ();
+
+define /FAlg_sstep_STR {M B} G L i A/
+/
+    `FAlg_sstep M B G L i A 
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) .
+    forall (A : Ext.wk (TPV G L i)) .
+
+    Ext.t (Ext.S' (
+        nat -> FAlg_C G L i A -> FAlg_C G L i A
+    ) (fn z . `step B (L z) (`F B (L z) (TPV_open z A))))
+/;
+unfold /FAlg_sstep_STR/.
+inference.
+introOf /M B G L i A/.
+reduce //.
+apply /Ext.intro/.
+4:{
+    symmetry.
+    apply /FAlg_C_open/.
+}
+3:{
+    apply /FAlg_C_open/.
+}
+2:{
+    symmetry.
+    apply /FAlg_C_open/.
+}
+1:{
+    apply /FAlg_C_open/.
+}
+intro /z _/.
+reduce //.
+apply /FAlg_sstep_open/.
+qed ();
+
+endModule ();

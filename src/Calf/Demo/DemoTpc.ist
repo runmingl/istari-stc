@@ -1,0 +1,110 @@
+beginModule "Demo";
+
+File.import "../Semantics/Tpc.ist";
+
+openModule /Tpc/;
+
+
+(*
+ * In on-paper notation, this is:
+ *          record CostAlg where
+ *               C : U
+ *               sstep : Nat -> C -> C
+ *               sstep0 : sstep 0 x = x
+ *               sstep+ : sstep (c1 + c2) x = sstep c1 (sstep c2 x)
+ *               sstepbeh : beh -> sstep c x = x
+ *)
+
+lemma "demoCostAlg"
+/
+     forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . 
+
+    (exists
+        (C : U i)
+        (sstep : nat -> C -> C)
+        (sstep_zero : forall (x : C) . 
+            sstep 0 x = x : C)
+        (sstep_plus : forall (n m : nat) (x : C) .
+           sstep (n + m) x = sstep n (sstep m x) : C)
+        (sstep_beh : forall (n : nat) (x : C) . beh -> 
+            sstep n x = x : C) .
+        unit)
+            : U (1 + i)
+/;
+intro /M B G L i/.
+infer /`CostAlg B i/ /CostAlgTy/.
+unfold /CostAlg in CostAlgTy/.
+auto.
+qed ();
+
+
+(*
+ * In on-paper notation, this is:
+ *          SynAlg : syn -> (X : tpc) -> CostAlg
+ *          SynAlg.C = tmv (U X)
+ *          SynAlg.sstep = step
+ *          SynAlg.sstep0 = step0
+ *          SynAlg.sstep+ = step+
+ *          SynAlg.sstepbeh = stepbeh
+ *)
+
+lemma "demoSynAlg"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) (z : `SynM M) 
+        (X : `tpc B (L z)) .
+        
+    (
+        tmv (U' X),
+        step X,
+        zero_step B (L z) X,
+        plus_step B (L z) X,
+        beh_step B (L z) X,
+    ())
+        : CostAlg i
+
+/;
+intro /M B G L i z X/.
+infer /`SynAlg M B L i z X/ /SynAlgTy/.
+unfold /SynAlg in SynAlgTy/.
+auto.
+qed ();
+
+(*
+ * In on-paper notation, this is: 
+ *          TPC : { U | syn ↪ tpc }
+ *          TPC = (X : tpc) ⋉ { CostAlg | syn ↪ SynAlg z X }
+ *)
+
+lemma "demoTPC"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . 
+    
+    Glue.t (G
+        (fn z . tpc)
+        (fn X . Ext.t (Ext.S' (CostAlg i) (fn z . SynAlg L i z (X z)))))
+        : Ext.t (Ext.S' (U (1 + i)) (fn z . tpc))
+/;
+intro /M B G L i/.
+infer /`TPC M B G L i/ /Tpc/.
+unfold /TPC in Tpc/.
+unfold /TPC_Sem in Tpc/.
+auto. 
+qed ();
+
+endModule ();
+

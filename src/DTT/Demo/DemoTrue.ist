@@ -5,7 +5,7 @@ File.import "../Semantics/True.ist";
 openModule /True/;
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          TRUE : { TM (BOOL) | syn ↪ true }
  *.         TRUE = glue (fn z . true) (η● (inl ()))
  *)

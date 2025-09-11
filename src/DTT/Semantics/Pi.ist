@@ -1,5 +1,5 @@
 File.import "../../Prelude.ist";
-File.import "../../tacticlib.ist";
+File.import "../../TacticLib.ist";
 File.import "../Syntax/Syntax.ist";
 
 openModule /Prelude/;

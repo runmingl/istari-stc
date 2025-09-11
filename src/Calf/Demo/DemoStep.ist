@@ -1,0 +1,40 @@
+beginModule "Demo";
+
+File.import "../Semantics/Step.ist";
+
+openModule /Step/;
+
+
+(*
+ * In on-paper notation, this is:
+ *              STEP : { (X : TPC) -> Nat -> TMV (UU X) -> TMV (UU X) | syn ↪ step }
+ *              STEP X = (pi_closed X) . sstep             
+ *             
+ *)
+
+lemma "demoStep"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . 
+    
+    (fn X . Glue.pi_closed X #2 #1)
+           : forall (X : Tpc.TPC G L i) .
+               Ext.t (Ext.S
+                (nat -> Tmv.TMV G L i (U.UU G L i X) -> Tmv.TMV G L i (U.UU G L i X))
+                (fn z . step X))
+/;
+intro /M B G L i/.
+infer /`STEP M B G L i/ /StepTy/.
+unfold /STEP in StepTy/.
+unfold /STEP_Ext in StepTy/.
+unfold /Ext.wk in StepTy at all/.
+unfold /Tpc.TPC_open in StepTy at all/.
+auto.
+qed ();
+
+endModule ();
+

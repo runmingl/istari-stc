@@ -5,7 +5,7 @@ File.import "../Semantics/Tm.ist";
 openModule /Tm/;
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          TM : { TP -> U | syn ↪ tm }
  *          TM A = pi_closed A 
  *)

@@ -1,0 +1,112 @@
+beginModule "Demo";
+
+File.import "../Semantics/F.ist";
+
+openModule /F/;
+
+(*
+ * In on-paper notation, this is:
+ *              FAlg.C : { U | syn ↪ tmv (U (F A)) }
+ *              FAlg.C = (e : tmv (U (F A))) ⋉ 
+ *                         (●S (Σ[ a : TMV A ] Σ[ bc : ●b Nat ] 
+ *                              case bc of 
+ *                                 ∗ b   => syn -> e = ret a                                
+ *                                 η●b c => syn -> e = step c (ret a)))
+ *             
+ *)
+
+lemma "demoFCarrier"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . 
+    
+    (fn A .
+        Glue.t (G
+            (fn z . tmv (U' (F A)))
+            (fn e .
+              ClosedM
+                (exists (a : Tmv.TMV G L i A) (bc : ClosedB nat) .
+                   TryB bc
+                     (fn b . forall (z : SynM) . e z = ret A a : tmv (U' (F A)))
+                     (fn c . forall (z : SynM) . e z = step (F A) c (ret A a) : tmv (U' (F A)))))))
+            : forall (A : Tpv.TPV G L i) .
+                Ext.t (Ext.S' (U i) (fn z . tmv (U' (F A))))
+/;
+intro /M B G L i/.
+infer /`FAlg_C_STR M B G L i/ /FAlgCTy/.
+unfold /FAlg_C_STR in FAlgCTy/.
+unfold /FAlg_C in FAlgCTy/.
+unfold /FAlg_C_Sem in FAlgCTy/.
+unfold /FAlg_C_PreSem in FAlgCTy/.
+unfold /Tpv.TPV_open in FAlgCTy at all/.
+unfold /Ext.wk in FAlgCTy at all/.
+unfold /TM_open in FAlgCTy at all/.
+auto.
+qed ();
+
+(*
+ * In on-paper notation, this is:
+ *              FAlg.sstep : { Nat -> FAlg.C -> FAlg.C | syn ↪ step }
+ *              FAlg.sstep c' e = glue (step c' e) (
+ *                 case (pi_closed e) of 
+ *                     ∗ z                => ∗ z 
+ *                     η●s (a, bc, alpha) => η●s 
+ *                          (
+ *                              a,
+ *                              case bc of 
+ *                                  ∗ b   => (∗ b, (fn z . ())) 
+ *                                  η●b c => (η●b (c' + c), (fn z . ())
+ *                          )
+ *             
+ *)
+
+
+lemma "demoFStep"
+/
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . 
+    
+    (fn A c' e .
+        Glue.glue (G (fn z . tmv (U' (F A))) (FAlg_C_Sem G L i A))
+          (fn z . step (F A) c' e)
+          (TryM
+             (Glue.pi_closed e)
+             (fn z . StarM z)
+             (fn a . EtaM
+                 (a #1,
+                  TryB'
+                    (fn co . TryB co
+                        (fn b . forall (z : SynM) . e = ret A (a #1) : tmv (U' (F A)))
+                        (fn c . forall (z : SynM) . e = step (F A) c (ret A (a #1)) : tmv (U' (F A))))
+                    (a #2 #1)
+                    (fn b p . (StarB b, (fn z . ())))
+                    (fn c p . (EtaB (c' + c), (fn z . ())))
+                    (a #2 #2)))))
+        : forall (A : Tpv.TPV G L i) .
+            Ext.t (Ext.S'
+                 (nat -> FAlg_C G L i A -> FAlg_C G L i A)
+                 (fn z . step (F A)))
+/;
+intro /M B G L i/.
+infer /`FAlg_sstep_STR M B G L i/ /FAlgStepTy/.
+unfold /FAlg_sstep_STR in FAlgStepTy/.
+unfold /FAlg_sstep in FAlgStepTy/.
+unfold /FAlg_sstep_Sem in FAlgStepTy/.
+unfold /Tpv.TPV_open in FAlgStepTy at all/.
+unfold /FAlg_open in FAlgStepTy at all/.
+unfold /TM_open in FAlgStepTy at all/.
+unfold /Ext.wk in FAlgStepTy at all/.
+unfold /closed_mapM in FAlgStepTy at all/.
+reduce /FAlgStepTy/.
+auto. 
+qed ();
+
+endModule ();

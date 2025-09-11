@@ -1,0 +1,287 @@
+File.import "Beh.ist";
+
+openModule /BehaviorPhase/;
+
+beginModule "CalfSyn";
+
+define /Sig {M} i/
+/
+	exists 
+	(tpv : U i)
+	(tmv : tpv -> U i)
+    (tpc : U i)
+    
+    (* adjoint functors *)
+    (F : tpv -> tpc)
+    (U' : tpc -> tpv)
+
+    (ret  : forall (A : tpv) . tmv A -> tmv (U' (F A)))
+    (bind : forall (A : tpv) (X : tpc) . tmv (U' (F A)) -> (tmv A -> tmv (U' X)) -> tmv (U' X))
+    (beta_bind : forall (A : tpv) (X : tpc) (a : tmv A) (f : tmv A -> tmv (U' X)) .
+        bind A X (ret A a) f = f a : _)
+    (eta_bind : forall (A : tpv) (e : tmv (U' (F A))) .
+        e = bind A (F A) e (ret A) : _)
+    (assoc_bind : forall (A B : tpv) (X : tpc) (e : tmv (U' (F A))) 
+                        (f : tmv A -> tmv (U' (F B))) (g : tmv B -> tmv (U' X)) .
+        bind B X (bind A (F B) e f) g = bind A X e (fn a . bind B X (f a) g) : _)
+
+    (step : forall (X : tpc) . nat -> tmv (U' X) -> tmv (U' X))
+    (zero_step : forall (X : tpc) (e : tmv (U' X)) . step X 0 e = e : _)
+    (plus_step : forall (X : tpc) (n m : nat) (e : tmv (U' X)) . 
+        step X (n + m) e = step X n (step X m e) : _)
+    (beh_step : forall (X : tpc) (n : nat) (e : tmv (U' X)) . 
+        `beh M -> step X n e = e : _)
+
+    (bind_step : forall (A : tpv) (X : tpc) (n : nat) (e : tmv (U' (F A))) 
+                        (f : tmv A -> tmv (U' X)) .
+        step X n (bind A X e f) = bind A X (step (F A) n e) f : _)
+	.
+	unit
+//
+	forall (M : intersect i . BehSig i) .
+    forall (i : level) . U (1 + i)
+/;
+unfold /Sig/.
+inference.
+typecheck.
+qed ();
+
+(* Define convenient operators *)
+define /tpv {B M}/
+/
+    M #1
+//
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    intersect i . U i
+/;
+unfold /tpv/.
+inference.
+introOf /B M i/.
+reduce //.
+typecheck.
+qed ();
+
+define /tmv {B M}/
+/
+    M #2 #1
+//
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    intersect i . 
+    `tpv B M -> U i
+/;
+unfold /tmv/.
+inference.
+introOf /B M i/.
+reduce //.  
+unfold /tpv at all/.
+typecheck.
+qed ();
+
+define /tpc {B M}/
+/
+    M #2 #2 #1
+//
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    intersect i . U i       
+/;
+unfold /tpc/.
+inference.
+introOf /B M i/.
+reduce //.      
+typecheck.
+qed ();
+
+define /F {B M}/
+/
+    M #2 #2 #2 #1
+//
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    intersect (i : level).
+    `tpv B M -> `tpc B M
+/;
+unfold /F/.
+inference.
+introOf /B M i/.
+reduce //.
+unfold /tpv at all, tpc at all/.
+typecheck.
+qed ();
+
+define /U' {B M}/
+/
+    M #2 #2 #2 #2 #1
+//
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    intersect (i : level).
+    `tpc B M -> `tpv B M
+/;
+unfold /U'/.
+inference.
+introOf /B M i/.
+reduce //.
+unfold /tpv at all, tpc at all/.
+typecheck.
+qed ();
+
+define /ret {B M}/
+/
+    M #2 #2 #2 #2 #2 #1 
+//
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    intersect (i : level).
+    forall (A : `tpv B M) .
+    tmv A -> tmv (U' (F A))
+/;
+unfold /ret/.
+inference.
+introOf /B M i/.
+reduce //.
+unfold /tpv at all, tmv at all, U' at all, F at all/.
+typecheck.
+qed ();
+
+define /bind {B M}/
+/
+    M #2 #2 #2 #2 #2 #2 #1
+//
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    intersect (i : level).
+    forall (A : `tpv B M) (X : `tpc B M) .
+    tmv (U' (F A)) -> (tmv A -> tmv (U' X)) -> tmv (U' X)
+/;
+unfold /bind/.
+inference.
+introOf /B M i/.
+reduce //.
+unfold /tpv at all, tmv at all, tpc at all, U' at all, F at all/.
+typecheck.
+qed ();
+
+lemma "beta_bind"
+/
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    forall (A : `tpv B M) (X : `tpc B M) 
+        (a : tmv A) (f : tmv A -> tmv (U' X)) .
+        bind A X (ret A a) f = f a : _
+/;
+inference.
+intro /B M/.
+reduce //.
+unfold /tpv at all, tpc at all, tmv at all, ret at all, bind at all, U' at all/.
+exact /M #2 #2 #2 #2 #2 #2 #2 #1/.
+qed ();
+
+lemma "eta_bind"
+/
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    forall (A : `tpv B M) (e : tmv (U' (F A))) .
+        e = bind A (F A) e (ret A) : _
+/;
+inference.
+intro /B M/.
+reduce //.
+unfold /tpv at all, tpc at all, tmv at all, ret at all, bind at all, U' at all, F at all/.
+exact /M #2 #2 #2 #2 #2 #2 #2 #2 #1/.
+qed ();
+
+lemma "assoc_bind"
+/
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    forall (A B : `tpv B M) (X : `tpc B M)
+        (e : tmv (U' (F A)))
+        (f : tmv A -> tmv (U' (F B))) (g : tmv B -> tmv (U' X)) .
+        bind B X (bind A (F B) e f) g = bind A X e (fn a . bind B X (f a) g) : _
+/;
+inference.
+intro /B M/.
+reduce //.
+unfold /tpv at all, tpc at all, tmv at all, ret at all, bind at all, U' at all, F at all/.
+exact /M #2 #2 #2 #2 #2 #2 #2 #2 #2 #1/.
+qed (); 
+
+define /step {B M}/
+/
+    M #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #1
+//
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    intersect (i : level).
+    forall (X : `tpc B M) . nat -> tmv (U' X) -> tmv (U' X)
+/;
+unfold /step/.
+inference.
+introOf /B M i/.
+reduce //.
+unfold /tpv at all, tmv at all, tpc at all, U' at all/.
+typecheck.
+qed ();
+
+lemma "zero_step"
+/
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    forall (X : `tpc B M) (e : tmv (U' X)) .
+        step X 0 e = e : _
+/;
+inference.
+intro /B M/.
+reduce //.
+unfold /tpv at all, tpc at all, tmv at all, step at all, U' at all/.
+exact /M #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #1/.
+qed ();
+
+lemma "plus_step"
+/
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    forall (X : `tpc B M) (n m : nat) (e : tmv (U' X)) .
+        step X (n + m) e = step X n (step X m e) : _
+/;
+inference.
+intro /B M/.
+reduce //.
+unfold /tpv at all, tpc at all, tmv at all, step at all, U' at all/.
+exact /M #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #1/.
+qed ();
+
+lemma "beh_step"
+/
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    forall (X : `tpc B M) (n : nat) (e : tmv (U' X)) .
+        `beh B -> step X n e = e : _        
+/;
+inference.
+intro /B M/.
+reduce //.
+unfold /tpv at all, tpc at all, tmv at all, step at all, U' at all/.
+exact /M #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #1/.
+qed ();
+
+lemma "bind_step"
+/
+    forall (B : intersect i . BehSig i) .
+    forall (M : intersect i . `Sig B i) .
+    forall (A : `tpv B M) (X : `tpc B M) (n : nat) 
+        (e : tmv (U' (F A)))
+        (f : tmv A -> tmv (U' X)) .
+        step X n (bind A X e f) = bind A X (step (F A) n e) f : _
+/;
+inference.
+intro /B M/.
+reduce //.
+unfold /tpv at all, tpc at all, tmv at all, step at all, bind at all, U' at all, F at all/.
+exact /M #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #2 #1/.
+qed (); 
+
+endModule ();

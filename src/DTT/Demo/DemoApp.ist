@@ -6,7 +6,7 @@ openModule /App/;
 beginModule "DemoApp";
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          APP : { TM (PI A B) -> (a : TM A) -> TM (B a) | syn ↪ app }
  *          APP e a = (pi_closed e) a
  *)

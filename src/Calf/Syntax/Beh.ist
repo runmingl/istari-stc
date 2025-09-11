@@ -1,0 +1,400 @@
+File.import "../../Prelude.ist";
+
+beginModule "BehaviorPhase";
+
+define /BehSig i/
+/
+    exists 
+        (beh          : U i )
+        (beh_prop     : (forall (u v : beh) . u = v : beh))
+
+        (Closed       : (U i -> U i))
+        (closed_eta   : (forall (A : U i) . A -> Closed A))
+        (closed_star  : (forall (A : U i) . beh -> Closed A))
+        (closed_law   : (forall (A : U i) (a : A) (z : beh) .  
+                        closed_star A z = closed_eta A a : Closed A))
+        (closed_try   : (forall 
+                            (A : U i) (C : Closed A -> U i)
+                            (a : Closed A) 
+                            (bstar : forall (z : beh) . C (closed_star _ z))
+                            (beta  : forall (a : A)   . C (closed_eta _ a)) 
+                            .
+                        (forall (z : beh) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+                        C a
+                        ))
+        (closed_beta1 : (forall
+                            (A : U i) (C : Closed A -> U i)
+                            (bstar : forall (z : beh) . C (closed_star _ z))
+                            (beta  : forall (a : A)   . C (closed_eta _ a)) 
+                            (a : A) 
+                            .
+                        (forall (z : beh) (a : A) . eqtp_eq (bstar z) (beta a)) -g>
+                        closed_try _ C (closed_eta _ a) bstar beta = beta a : C (closed_eta _ a)
+                        ))
+        (closed_beta2 : (forall 
+                            (A : U i) (C : Closed A -> U i ) 
+                            (z : beh) 
+                            (bstar : forall (z : beh) . C (closed_star _ z))
+                            (beta  : forall (a : A)   . C (closed_eta _ a))
+                            .
+                        (forall (z : beh) (a : A) . eqtp_eq (bstar z) (beta a)) -g>
+                        closed_try _ C (closed_star _ z) bstar beta = bstar z : C (closed_star _ z) 
+                        ))
+        .
+        unit
+//
+    forall (i : level) . U (1 + i)
+/;
+unfold /BehSig/.
+introOf /i/. reduce //.
+inference.
+introForm /beh/.
+introForm /beh_prop/.
+introForm /Closed/.
+introForm /closed_eta/.
+introForm /closed_star/.
+introForm /closed_law/.
+introForm /closed_try/. 
+{
+    apply /closed_law/.
+}
+introForm /closed_beta1/. 
+{
+    apply /closed_law/.
+}
+introForm /closed_beta2/. 
+{
+    apply /closed_law/.
+}
+typecheck.
+qed();
+
+define /beh {M}/
+/
+    M #1
+//
+    forall (M : intersect i . BehSig i) .
+    intersect i . U i
+/;
+unfold /beh/.
+inference. 
+introOf /M i/. reduce//.
+exploit /M ap i/ /beh' _/.
+typecheck.
+qed ();
+
+define /beh_prop {M}/
+/
+    M #2 #1
+//
+    forall (M : intersect i . BehSig i) .
+    intersect (i : level) . 
+    forall (u v : `beh M) . u = v : beh
+/;
+unfold /beh_prop/.
+inference. 
+introOf /M i/. reduce//.
+(* exploit /M ap i/ /beh behProp ?/. *)
+(* destruct /M/ /beh behProp ?/. *)
+unfold /beh at all/.
+reduce //.
+typecheck.
+qed ();
+
+define /ClosedB {M}/
+/
+    M #2 #2 #1
+//
+    forall (M : intersect i . BehSig i) .
+    intersect (i : level) . (U i -> U i)
+/;
+unfold /ClosedB/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /beh beh_prop Closed _/. *)
+reduce //.
+typecheck.
+qed ();
+
+define /EtaB {M A}/
+/
+    M #2 #2 #2 #1 A
+//
+    forall (M : intersect i . BehSig i) .
+    intersect i . 
+    forall (A : U i) . A -> (`ClosedB M A)
+/;
+unfold /EtaB/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /beh beh_prop Closed eta ?/. *)
+unfold /ClosedB/.
+typecheck.
+qed ();
+
+
+define /StarB {M A}/
+/
+    M #2 #2 #2 #2 #1 A
+//
+    forall (M : intersect i . BehSig i) .
+    intersect i . 
+    forall (A : U i) . `beh M -> `ClosedB M A
+/;
+unfold /StarB/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /beh beh_prop Closed eta star ?/. *)
+unfold /beh, ClosedB/.
+reduce /concl/.
+typecheck.
+qed ();
+
+define /CloLawB {M A}/
+/
+    M #2 #2 #2 #2 #2 #1 A
+//
+    forall (M : intersect i . BehSig i) .
+    intersect i . 
+    forall (A : U i) (a : A) (z : `beh M) . StarB z = EtaB a : ClosedB A
+/;
+unfold /CloLawB/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /beh beh_prop Closed eta star law ?/. *)
+unfold /beh, EtaB, StarB, ClosedB/.
+reduce /concl/.
+typecheck.
+qed ();
+
+define /TryB {M A C}/
+/
+    M #2 #2 #2 #2 #2 #2 #1 A C
+//
+    forall (M : intersect i . BehSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedB M A -> U i)
+           (a : `ClosedB M A) 
+           (bstar : forall (z : beh) . C (StarB z))
+           (beta  : forall (a : A) . C (EtaB a)) 
+        .
+        (forall (z : beh) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+        C a
+/;
+unfold /TryB/.
+inference. 
+introOf /M i/. reduce//.
+(* destruct /M/ /beh beh_prop Closed eta star law try ?/. *)
+unfold /beh at all, EtaB at all, StarB at all, ClosedB at all/.
+reduce //.
+typecheck.
+qed ();
+
+define /TryB_beta1 {M A C}/
+/
+    M #2 #2 #2 #2 #2 #2 #2 #1 A C
+//
+    forall (M : intersect i . BehSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedB M A -> U i)
+           (bstar : forall (z : beh) . C (StarB z))
+           (beta  : forall (a : A) . C (EtaB a)) 
+           (a : A)
+        .
+        (forall (z : beh) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+        `TryB M _ C (`EtaB M _ a) bstar beta = beta a : C (`EtaB M _ a) 
+/;
+unfold /TryB_beta1/.
+inference.
+introOf /M i/. reduce//.
+unfold /beh at all, EtaB at all, StarB at all, ClosedB at all, TryB at all/.
+typecheck. 
+qed ();
+
+define /TryB_beta2 {M A C}/
+/
+    M #2 #2 #2 #2 #2 #2 #2 #2 #1 A C
+//
+    forall (M : intersect i . BehSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedB M A -> U i)
+           (z : `beh M)
+           (bstar : forall (z : beh) . C (StarB z))
+           (beta  : forall (a : A) . C (EtaB a))
+        .
+        (forall (z : beh) (a : A) . eqtp_eq (bstar z) (beta a)) -g>
+        `TryB M _ C (`StarB M _ z) bstar beta = bstar z : C (`StarB M _ z)
+/;
+unfold /TryB_beta2/.
+inference.
+introOf /M i/. reduce//.
+unfold /beh at all, EtaB at all, StarB at all, ClosedB at all, TryB at all/.
+typecheck.
+qed ();
+
+
+define /OpenB {M} A/
+/
+    (`beh M) -> A
+//
+    forall (M : intersect i . BehSig i) .
+    intersect i . forall (A : U i) . U i 
+/;
+unfold /OpenB/.
+inference.
+introOf /M i A/. 
+typecheck.
+qed ();
+
+define /isClosedModalB M A/
+/
+    (`OpenB M) (exists (x : A) . forall (y : A) . x = y : A)
+//
+    forall (M : intersect i . BehSig i) .
+    intersect i . forall (A : U i) . U i 
+/;
+unfold /isClosedModalB/.
+inference.
+introOf /M i A/. 
+typecheck.
+qed ();
+
+lemma "closed_isClosedModalB" 
+/ 
+    forall (M : intersect i . BehSig i) .
+    intersect i .
+    forall (A : U i) . isClosedModalB M (`ClosedB M A)
+/;
+inference.
+intro /M i A/.
+unfold /isClosedModalB, OpenB/.
+intro /z/.
+exists /StarB z/.
+intro /y/.
+so /`TryB _ _ (fn a . StarB z = a : _) y (fn _ . ()) (fn _ .())/ /H/.
+{
+    hyp /H/.
+}
+{
+    rewrite /-> beh_prop z z1/.
+    reflexivity.
+}
+{
+    apply /CloLawB/.
+}
+{
+    reduce //.
+    intro /z' a/.
+    unfold /eqtp_eq/.
+    typecheck.
+    rewrite /-> beh_prop z z'/.
+    reflexivity.
+}
+qed ();
+
+lemma "closedB_eq"
+/
+    forall (M : intersect i . BehSig i) .
+    intersect i . 
+    forall (A : U i) (a a' : `ClosedB M A). 
+    `beh M -> a = a' : ClosedB A
+/;
+inference.
+intro /M i A a a' z/.
+so /closed_isClosedModalB M A z/ /Hcl/.
+destruct /Hcl/ /[point Ht]/.
+so /Ht a/ /H1/.
+so /Ht a'/ /H2/.
+rewrite /<- H1, <- H2/.
+reflexivity.
+qed ();
+
+define /TryB' {B A C} P a bstar beta p/
+/
+    `TryB B A (fn a' . P (a') -> C (a')) a (fn z . bstar z) (fn a' . beta a') p
+//
+    forall (B : intersect i . BehSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedB B A -> U i)
+            (P : `ClosedB B A -> U i)
+           (a : `ClosedB B A) 
+           (bstar : forall (z : `beh B) . P (`StarB B A z) -> C (`StarB B A z))
+           (beta  : forall (a' : A) . P (`EtaB B A a') -> C (`EtaB B A a')) 
+           (p : P a)
+        .
+        (forall (z : `beh B) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+        C a
+/;
+unfold /TryB'/.
+inference.
+introOf /M i A C P a bstar beta p/.
+reduce //.
+typecheck. 
+{
+    apply /closedB_eq/ >> auto.
+}
+{
+    apply /closedB_eq/ >> auto.
+}
+qed ();
+
+
+lemma "TryB'_beta1"
+/
+    forall (B : intersect i . BehSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedB B A -> U i)
+            (P : `ClosedB B A -> U i)
+           (a : A) 
+           (bstar : forall (z : `beh B) . P (`StarB B A z) -> C (`StarB B A z))
+           (beta  : forall (a' : A) . P (`EtaB B A a') -> C (`EtaB B A a')) 
+           (p : P (`EtaB B A a))
+        .
+        (forall (z : `beh B) (a : A) . eqtp_eq (bstar z) (beta a)) -g> 
+        `TryB' B A C P (`EtaB B A a) bstar beta p = beta a p : C (`EtaB B A a)
+/;
+inference.
+intro /B i A C P a bstar beta p H/.
+{
+    apply /closedB_eq/ >> auto.
+}
+{
+    apply /closedB_eq/ >> auto.
+}
+unfold /TryB'/.
+so /`TryB_beta1 B A (fn a' . P (a') -> C (a')) (fn z . bstar z) (fn a' . beta a') a/ /beta1/.
+{
+    reduce /beta1/.
+    decompEq 1 /P (`EtaB B A a) -> C (`EtaB B A a)/ >> auto.
+}
+auto.
+qed ();
+
+lemma "TryB'_beta2"
+/
+    forall (B : intersect i . BehSig i) .
+    intersect i .
+    forall (A : U i) (C : `ClosedB B A -> U i)
+            (P : `ClosedB B A -> U i)
+           (z : `beh B)
+              (bstar : forall (z : `beh B) . P (`StarB B A z) -> C (`StarB B A z))
+              (beta  : forall (a' : A) . P (`EtaB B A a') -> C (`EtaB B A a'))
+              (p : P (`StarB B A z))
+        .
+        (forall (z : `beh B) (a : A) . eqtp_eq (bstar z) (beta a)) -g>
+        `TryB' B A C P (`StarB B A z) bstar beta p = bstar z p : C (`StarB B A z)
+/;
+inference.
+intro /B i A C P z bstar beta p H/.
+{ apply /closedB_eq/ >> auto. }
+{ apply /closedB_eq/ >> auto. }
+unfold /TryB'/.
+so /`TryB_beta2 B A (fn a' . P (a') -> C (a')) z (fn z . bstar z) (fn a' . beta a')/ /beta2/.
+{
+    reduce /beta2/.
+    decompEq 1 /P (`StarB B A z) -> C (`StarB B A z)/ >> auto.
+}
+auto. 
+qed ();
+
+endModule ();

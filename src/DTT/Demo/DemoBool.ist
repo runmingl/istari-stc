@@ -7,7 +7,7 @@ beginModule "DemoBool";
 
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          BOOL : { TP | syn ↪ bool }
  *          BOOL = glue (fn z . bool) ((e : tm bool) ⋉ (● (e = tt + e = ff))
  *)

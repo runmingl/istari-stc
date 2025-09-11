@@ -1,0 +1,379 @@
+File.import "../../TacticLib.ist";
+File.import "../Syntax/Syntax.ist";
+
+openModule /Prelude/;
+openModule /CalfSyn/;
+
+beginModule "Step";
+
+File.import "Tpv.ist";
+File.import "Tpc.ist";
+File.import "Tmv.ist";
+File.import "U.ist";
+
+openModule /Tpv/;
+openModule /Tpc/;
+openModule /Tmv/;
+openModule /U/;
+
+define /STEP_Ext {M B} G L i X/
+/
+    Ext.S (nat -> Ext.wk (TMV G L i) ((Ext.wk (UU G L i)) X) -> Ext.wk (TMV G L i) ((Ext.wk (UU G L i)) X)) (fn z . `step B (L z) (TPC_open z X))
+//
+    forall 
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) . 
+        forall (X : Ext.wk (TPC G L i)) .
+    `Ext.EXT M (lsucc i) (fn z . nat -> tmv (U' (TPC_open z X)) -> tmv (U' (TPC_open z X))) _ _
+/;
+unfold /STEP_Ext/.
+inference.
+introOf /M B G L i X/. reduce //.
+typecheck1 >> auto.
+intro /z/. reduce //.
+rewrite /-> Ext.syn_eq _ (UU G L i) z at all/.
+rewrite /-> Ext.syn_eq _ (TMV G L i) z at all/.
+unfold /Ext.pt at all, Ext.wk at all/.
+fold /TPC_open z X at 0/.
+fold /TPC_open z X at 1/.
+reflexivity.
+qed ();
+
+define /STEP {M B} G L i X/
+/
+    (Glue.pi_closed X) #2 #1
+//
+    forall
+        (M : intersect i . PhaseSig i)
+        (B : intersect i . BehSig i)
+        (G : intersect i . Glue.GLUE_CM M i) 
+        (L : `SynM M -> intersect i . `Sig B i) .
+    forall (i : level) .
+    forall (X : Ext.wk (TPC G L i)) .
+    Ext.t (STEP_Ext G L i X)
+/;
+unfold /STEP/.
+inference.
+introOf /M B G L i X/. reduce //.
+unfold /TPC in X/.
+unfold /TPC_Sem in X/.
+unfold /Ext.wk in X/.
+
+assert /forall (x : forall (z : SynM) . tpv) . isClosedModalM M (TPV_Sem L i x)/ /tpvClosed/.
+{
+    inference.
+    apply /TPV_Sem_isClosedModal/.
+}
+
+assert /forall (x : forall (z : SynM) . tpc) . isClosedModalM M (TPC_Sem L i x)/ /tpcClosed/.
+{
+    inference.
+    apply /TPC_Sem_isClosedModal/.
+}
+
+unfold /TPC_Sem in tpcClosed/.
+
+infer /Glue.pi_closed X/ /PiClosedXTp/.
+
+assert /forall (z : `SynM M) . Glue.pi_closed X = SynAlg L i z (Glue.pi_open X z) : CostAlg i/ /HeqPiClosed/.
+{
+    inference.
+    intro /z/.
+    soRaw /Ext.syn_eq (Ext.S' (CostAlg i) (fn z . SynAlg L i z (Glue.pi_open X z))) (Glue.pi_closed X) z/ /eqClosed/.
+    6:{
+        inference.
+        typecheck. 
+        {
+            reflexivity.
+        }
+    }
+    typecheck_goals [7, 4, 3, 2, 1];
+    2:{
+        auto.
+    }
+    1:{
+        reduce //.
+        typecheck. 
+        {
+            reflexivity.
+        }
+    }
+    unfold /Ext.pt in eqClosed/.
+    subsume /Ext.t
+         (Ext.S'
+            (CostAlg i)
+            (fn z1 . SynAlg L i z1 (Glue.pi_open X z1)))/.
+    {
+        apply /Ext.subtype/.
+        {
+            reflexivity.
+        }
+        reflexivity.
+    }
+    auto. 
+}
+
+assert /forall (z : `SynM M) . Glue.pi_closed X #1 = tmv (U' (Glue.pi_open X z)) : _/ /proj1Eq/.
+{
+    inference.
+    intro /z/.
+    transitivity /SynAlg L i z (Glue.pi_open X z) #1/.
+    1:{
+        unfold /SynAlg/.
+        reflexivity.
+        reflexivity.
+    }
+    {
+        inference.
+        rememberRaw /Glue.pi_closed X/ /`CostAlg B i/ /q1/ /p1/.
+        {
+            subsume /Ext.t (Ext.S' (CostAlg i) (fn z . SynAlg L i z (Glue.pi_open X z)))/.
+            {
+                apply /Ext.subtype/.
+                {
+                    reflexivity.
+                }
+                reflexivity.
+            }
+            auto. 
+        }
+        rememberRaw /SynAlg L i z (Glue.pi_open X z)/ /`CostAlg B i/ /q2/ /p2/.
+        {
+            typecheck. 
+            reflexivity.
+        }                
+        decompEq 1 /(exists 
+                    (C : U i)
+                    (sstep : nat -> C -> C)
+                    (sstep_zero : forall (x : C) . sstep 0 x = x : C)
+                    (sstep_plus
+                       : forall (n m : nat) (x : C) .
+                           sstep (n + m) x = sstep n (sstep m x) : C)
+                    (sstep_beh : forall (n : nat) (x : C) . beh -> sstep n x = x : C) .
+                    unit)/.
+        etransitivity.
+        {
+            unfold /CostAlg in p1/.
+            hyp /p1/.
+        }
+        {
+            etransitivity.
+            {
+                unfold /CostAlg in HeqPiClosed/.
+                apply /HeqPiClosed z/.                        
+            }
+            symmetry.
+            unfold /CostAlg in p2/.
+            auto. 
+        }
+    }
+}
+
+assert /Glue.t
+  (G
+     (fn z1 . tpc)
+     (fn X1 . Ext.t (Ext.S' (CostAlg i) (fn z1 . SynAlg L i z1 (X1 z1)))))
+  = Ext.wk (TPC G L i)
+  : U (1 + i)/ /HeqTPC/.
+{
+    unfold /TPC, TPC_Sem, Ext.wk/.
+    reflexivity.
+}
+
+unfold /STEP_Ext/.
+
+applyRaw /Ext.intro/.
+6:{
+    inference.
+    typecheck1.
+    4:{
+        introOf /z/.
+        infer /`TPC_open M B G L ap i z X/ /TPC_openTp/.
+        unfold /ap in TPC_openTp/.
+        typecheck. 
+    } 
+    2:{
+        introOf /z/.
+        infer /`TPC_open M B G L ap i z X/ /TPC_openTp2/.
+        unfold /ap in TPC_openTp2/.
+        typecheck.
+    }
+    typechecker ();
+    reduce //.
+    intro /z/.
+    rewrite /-> Ext.syn_eq _ (UU G L i) z at all/.
+    rewrite /-> Ext.syn_eq _ (TMV G L i) z at all/.
+    unfold /Ext.pt at all, Ext.wk at all/.
+    fold /TPC_open z X at 0/.
+    fold /TPC_open z X at 1/.
+    reflexivity.
+}
+typecheck_goals [5, 4, 3, 2, 1];
+{
+    intro /z H/.
+    reduce //.
+    reduce /H/.
+
+    assert /SynAlg L i z (Glue.pi_open X z) #1 = tmv (U' (TPC_open z X)) : _/ /HeqPiOpen/.
+    {
+        inference.
+        unfold /SynAlg/.
+        rewrite /-> Glue.syn_eq _ z/.
+        {
+            reflexivity.
+        }
+        fold /TPC_open z X at 0/.
+        reflexivity.
+    }
+ 
+    assert /Glue.pi_closed X #2 = SynAlg L i z (Glue.pi_open X z) #2 : _/ /proj2Eq/.
+    {
+        inference.
+        symmetry.
+        
+        decompEq 1 /(exists 
+                    (C : U i)
+                    (sstep : nat -> C -> C)             
+                    (sstep_zero : forall (x : C) . sstep 0 x = x : C)
+                    (sstep_plus : forall (n m : nat) (x : C) .
+                                   sstep (n + m) x = sstep n (sstep m x) : C)
+                    (sstep_beh : forall (n : nat) (x : C) . beh -> sstep n x = x : C) .
+                    unit)/.
+        symmetry.
+        unfold /CostAlg in HeqPiClosed/.
+        auto. 
+    }
+
+    transitivity /SynAlg L i z (Glue.pi_open X z) #2 #1/.
+    {   
+        eqtp /nat -> SynAlg L i z (Glue.pi_open X z) #1 -> SynAlg L i z (Glue.pi_open X z) #1/.
+        {
+            transitivity /nat -> tmv (U' (TPC_open z X)) -> tmv (U' (TPC_open z X))/.
+            {
+                typecheck. 
+            }
+            rewrite /-> Ext.syn_eq _ (UU G L i) z at all/ >> auto.
+            rewrite /-> Ext.syn_eq _ (TMV G L i) z at all/ >> auto.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            fold /TPC_open z X at 2/.
+            fold /TPC_open z X at 3/.
+            reflexivity.
+        }
+        decompEq 1 /(exists
+                 (sstep
+                    : nat
+                      -> SynAlg L i z (Glue.pi_open X z) #1
+                      -> SynAlg L i z (Glue.pi_open X z) #1)
+                 (sstep_zero
+                    : forall (x : SynAlg L i z (Glue.pi_open X z) #1) .
+                        sstep 0 x = x : SynAlg L i z (Glue.pi_open X z) #1)
+                 (sstep_plus
+                    : forall
+                        (n m : nat)
+                        (x : SynAlg L i z (Glue.pi_open X z) #1) .
+                        sstep (n + m) x
+                          = sstep n (sstep m x)
+                          : SynAlg L i z (Glue.pi_open X z) #1)
+                 (sstep_beh
+                    : forall
+                        (n : nat)
+                        (x : SynAlg L i z (Glue.pi_open X z) #1) .
+                        beh
+                        -> sstep n x = x : SynAlg L i z (Glue.pi_open X z) #1) .
+                 unit)/.
+        auto. 
+    }
+    unfold /SynAlg/.
+    compatRaw.
+    typecheck_goals [3, 2, 1];
+    {
+        typecheck. 
+        {
+            rewrite /-> Ext.syn_eq _ (UU G L i) z at all/ >> auto.
+            rewrite /-> Ext.syn_eq _ (TMV G L i) z at all/ >> auto.
+            unfold /Ext.pt at all, Ext.wk at all/.
+            fold /TPC_open z X at 0/.
+            rewrite /-> Glue.syn_eq _ z/.
+            { reflexivity. }
+            fold /TPC_open z X at 1/.
+            reflexivity.
+        }
+        rewrite /-> Ext.syn_eq _ (UU G L i) z at all/ >> auto.
+        rewrite /-> Ext.syn_eq _ (TMV G L i) z at all/ >> auto.
+        unfold /Ext.pt at all, Ext.wk at all/.
+        fold /TPC_open z X at 1/.
+        rewrite /-> Glue.syn_eq _ z/.
+        { reflexivity. }
+        fold /TPC_open z X at 0/.
+        reflexivity.
+    }
+    rewrite /-> Glue.syn_eq _ z/ >> auto.
+    fold /TPC_open z X at 0/.
+    reflexivity.        
+}
+
+assert /Glue.pi_closed X #1 : TPV_Sem L i (fn z . U' (TPC_open z X))/ /piClosed/.
+{
+    inference.
+    unfold /TPV_Sem/.
+    reduce //.
+    infer /Glue.pi_closed X/ /piClosedTy/.
+    reduce /piClosedTy/.
+    applyRaw /`Ext.intro M (lsucc i) (fn z . U i) (U i) (fn z . `tmv B (L z) (U' (TPC_open z X))) _ (Glue.pi_closed X #1) / >> auto.
+    {
+        intro /z _/.
+        infer /`TPC_open M B G L ap i z X/ /TPC_openTp/.
+        unfold /ap in TPC_openTp/.
+        reduce //.
+        etransitivity.
+        {
+            apply /proj1Eq z/.
+        }
+        rewriteRaw /-> Glue.syn_eq _ z/.
+        typecheck_goals [7, 6, 5, 4, 3, 2, 1, 0];
+        fold /TPC_open z X/.
+        reflexivity.
+    }
+}
+
+eqtp /nat -> (Glue.pi_closed X #1) -> (Glue.pi_closed X #1)/.
+{
+    typecheck.
+    {
+        unfold /TMV, UU, Ext.wk at all/.
+        rewriteRaw /-> Glue.beta2/.
+        5:{
+            inference.
+            typecheck. 
+        }
+        typecheck_goals [6, 5, 4, 3, 2, 1];
+        {
+            typecheck.
+            unfold /TPV_Sem/.
+            apply /Ext.subtype/.
+        }
+        reflexivity.
+    }
+    {
+        unfold /TMV, UU, Ext.wk at all/.
+        rewriteRaw /-> Glue.beta2/.
+        5:{
+            inference.
+            typecheck. 
+        }
+        typecheck_goals [6, 5, 4, 3, 2, 1];
+        {
+            typecheck.
+            unfold /TPV_Sem/.
+            apply /Ext.subtype/.
+        }
+        reflexivity.
+    }
+}
+typecheck. 
+qed ();
+
+endModule ();

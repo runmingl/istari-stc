@@ -5,7 +5,7 @@ File.import "../Semantics/False.ist";
 openModule /False/;
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          FALSE : { TM (BOOL) | syn ↪ false }
  *.         FALSE = glue (fn z . false) (η● (inr ()))
  *)

@@ -5,7 +5,7 @@ File.import "../Semantics/Tp.ist";
 openModule /Tp/;
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          TP : { U | syn ↪ tp }
  *          TP = (A : tp) ⋉ { U | syn ↪ tm A }
  *)

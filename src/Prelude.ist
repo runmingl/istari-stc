@@ -1,4 +1,4 @@
-File.import "tpeq_eq.ist";
+File.import "TpEq.ist";
 
 beginModule "Prelude";
 

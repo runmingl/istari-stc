@@ -1,4 +1,4 @@
-NAMES = Tp Tm Bool True False If IfTrue IfFalse Pi Lam App PiBeta PiEta
+NAMES = Tpc U F Step
 
 .PHONY: all clean veryclean report $(NAMES)
 

@@ -5,7 +5,7 @@ File.import "../Semantics/If.ist";
 openModule /If/;
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          IF : { (C : TM (BOOL) -> TP) -> (b : TM (BOOL)) -> C (TRUE) -> C (FALSE) -> C (b) | syn ↪ if }
  *          IF C b c0 c1 = 
  *            case pi_closed b of

@@ -6,7 +6,7 @@ openModule /Lam/;
 beginModule "DemoLam";
 
 (*
- * In Sterling's notation, this is: 
+ * In on-paper notation, this is: 
  *          LAM : { ((a : TM A) -> TM (B a)) -> TM (PI A B) | syn ↪ lam }
  *          LAM f = glue (fn z . lam f) f 
  *)
