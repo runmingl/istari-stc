@@ -11,10 +11,10 @@ define TYPECHECK_template
 $(1):
 	@echo "Typechecking Demo/Demo$(1).ist ..."
 	@if istari Demo/Demo$(1).ist; then \
-		echo "Demo/$(1).ist" >> $(SUCCESS_FILE); \
+		echo "Demo/Demo$(1).ist" >> $(SUCCESS_FILE); \
 		echo "\033[0;32mTypechecked Demo/Demo$(1).ist successfully.\033[0m"; \
 	else \
-		echo "Demo/$(1).ist" >> $(FAIL_FILE); \
+		echo "Demo/Demo$(1).ist" >> $(FAIL_FILE); \
 		echo "\033[0;31mTypechecking Demo/Demo$(1).ist failed.\033[0m"; \
 	fi
 endef
